@@ -204,13 +204,6 @@ export const applyForCoachOrVenueOwnerController = async (
       message: 'Application submitted successfully',
     });
   } catch (error: any) {
-    if (error?.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'You already have a pending or approved application',
-      });
-    }
-
     console.error('Error creating application:', error);
     return res.status(500).json({
       success: false,

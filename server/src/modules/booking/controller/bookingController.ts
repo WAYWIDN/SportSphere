@@ -4,6 +4,7 @@ import { CoachSlot } from '../../coach/model/coachSlotModel';
 import { SessionRequest } from '../../coach/model/sessionRequestModel';
 import { sendSlotEvent } from '../../coach/utils/slotEventUtils';
 import { Booking } from '../model/bookingModel';
+import { queueBookingNotification } from '../utils/bookingNotificationQueue';
 
 export const getUserBookingsController = async (
   req: Request,
@@ -105,6 +106,11 @@ export const cancelBookingController = async (req: Request, res: Response) => {
         );
       }
     }
+
+    await queueBookingNotification({
+      bookingId: booking._id.toString(),
+      status: 'cancelled',
+    });
 
     return res.status(200).json({ success: true, data: booking });
   } catch (error) {

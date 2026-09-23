@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { Booking } from '../../booking/model/bookingModel';
+import { queueBookingNotification } from '../../booking/utils/bookingNotificationQueue';
 import { CoachSlot } from '../model/coachSlotModel';
 import { SessionRequest } from '../model/sessionRequestModel';
 import { sendSlotEvent } from '../utils/slotEventUtils';
@@ -62,13 +63,6 @@ export const createSessionRequestController = async (
 
     return res.status(201).json({ success: true, data: sessionRequest });
   } catch (error: any) {
-    if (error?.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'You have already requested this slot',
-      });
-    }
-
     console.error('Error creating session request:', error);
     return res
       .status(500)
@@ -238,6 +232,11 @@ export const updateSessionRequestController = async (
       endEpoch: bookedSlot.endEpoch,
     });
 
+    await queueBookingNotification({
+      bookingId: booking._id.toString(),
+      status: 'confirmed',
+    });
+
     sessionRequest.status = 'approved';
     sessionRequest.updatedAt = new Date();
     await sessionRequest.save();
@@ -264,13 +263,6 @@ export const updateSessionRequestController = async (
       data: { request: sessionRequest, booking },
     });
   } catch (error: any) {
-    if (error?.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'This request has already been approved',
-      });
-    }
-
     console.error('Error updating session request:', error);
     return res.status(500).json({
       success: false,
