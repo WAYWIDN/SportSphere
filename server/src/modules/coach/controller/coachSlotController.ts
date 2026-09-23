@@ -11,7 +11,7 @@ export const createCoachSlotController = async (
   const { date, startEpoch, endEpoch } = req.body;
 
   try {
-    if (await hasSlotOverlap(coachId as string, startEpoch, endEpoch)) {
+    if (await hasSlotOverlap(coachId as string, date, startEpoch, endEpoch)) {
       return res
         .status(409)
         .json({ success: false, message: 'Slot overlaps an existing slot' });

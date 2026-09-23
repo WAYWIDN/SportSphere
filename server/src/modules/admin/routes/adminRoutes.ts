@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../../middleware/authMiddleWare';
-import { adminMiddleware } from '../../../middleware/adminMiddleware';
+import { requireRole } from '../../../middleware/roleMiddleware';
 import {
   getPendingApplicationsController,
   updateApplicationStatusController,
@@ -21,7 +21,7 @@ const adminRouter: Router = Router();
 adminRouter.get(
   '/v1/admin/applications',
   authMiddleware,
-  adminMiddleware,
+  requireRole('admin'),
   validateQuery(applicationListQuerySchema),
   getPendingApplicationsController,
 );
@@ -29,7 +29,7 @@ adminRouter.get(
 adminRouter.patch(
   '/v1/admin/applications/:applicationId',
   authMiddleware,
-  adminMiddleware,
+  requireRole('admin'),
   validateParams(applicationIdParamsSchema),
   validate(updateApplicationStatusSchema),
   updateApplicationStatusController,

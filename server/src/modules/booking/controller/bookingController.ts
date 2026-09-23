@@ -3,6 +3,8 @@ import { Types } from 'mongoose';
 import { CoachSlot } from '../../coach/model/coachSlotModel';
 import { SessionRequest } from '../../coach/model/sessionRequestModel';
 import { sendSlotEvent } from '../../coach/utils/slotEventUtils';
+import { VenueSlot } from '../../venue-owner/model/slotModel';
+import { sendSlotEvent as sendVenueSlotEvent } from '../../venue-owner/utils/slotEventUtils';
 import { Booking } from '../model/bookingModel';
 import { queueBookingNotification } from '../utils/bookingNotificationQueue';
 
@@ -103,6 +105,21 @@ export const cancelBookingController = async (req: Request, res: Response) => {
           slot._id.toString(),
           'slot_available',
           { slotId: slot._id },
+        );
+      }
+    } else if (booking.providerType === 'venue') {
+      const slot = await VenueSlot.findOneAndUpdate(
+        { _id: booking.resourceId, status: 'booked' },
+        { status: 'available', updatedAt: new Date() },
+        { new: true },
+      );
+      if (slot) {
+        sendVenueSlotEvent(
+          slot.subvenueId.toString(),
+          slot.date,
+          slot._id.toString(),
+          'slot-cancelled',
+          { slot },
         );
       }
     }

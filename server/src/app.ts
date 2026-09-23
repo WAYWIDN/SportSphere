@@ -8,6 +8,7 @@ import adminRouter from './modules/admin/routes/adminRoutes';
 import coachRouter from './modules/coach/routes/coachRoutes';
 import sessionRequestRouter from './modules/coach/routes/sessionRequestRoutes';
 import bookingRouter from './modules/booking/routes/bookingRoutes';
+import venueOwnerRouter from './modules/venue-owner/routes/venueOwnerRoutes';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(adminRouter);
 app.use(coachRouter);
 app.use(sessionRequestRouter);
 app.use(bookingRouter);
+app.use(venueOwnerRouter);
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is healthy' });
 });

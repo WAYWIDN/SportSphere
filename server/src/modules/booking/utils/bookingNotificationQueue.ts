@@ -2,10 +2,11 @@ import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import envConfig from '../../../config/envConfig';
 
-export type BookingNotificationStatus = 'confirmed' | 'cancelled';
+export type BookingNotificationStatus = 'confirmed' | 'rejected' | 'cancelled';
 
 export interface BookingNotificationData {
-  bookingId: string;
+  bookingId?: string;
+  requestId?: string;
   status: BookingNotificationStatus;
 }
 

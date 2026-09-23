@@ -176,6 +176,10 @@ export const updateSessionRequestController = async (
       sessionRequest.status = 'rejected';
       sessionRequest.updatedAt = new Date();
       await sessionRequest.save();
+      await queueBookingNotification({
+        requestId: sessionRequest._id.toString(),
+        status: 'rejected',
+      });
       if (slot) {
         sendSlotEvent(
           slot.coachId.toString(),
@@ -241,6 +245,11 @@ export const updateSessionRequestController = async (
     sessionRequest.updatedAt = new Date();
     await sessionRequest.save();
 
+    const otherPendingRequests = await SessionRequest.find({
+      slotId: bookedSlot._id,
+      status: 'pending',
+      _id: { $ne: sessionRequest._id },
+    }).select('_id');
     await SessionRequest.updateMany(
       {
         slotId: bookedSlot._id,
@@ -248,6 +257,14 @@ export const updateSessionRequestController = async (
         _id: { $ne: sessionRequest._id },
       },
       { status: 'rejected', updatedAt: new Date() },
+    );
+    await Promise.all(
+      otherPendingRequests.map((request) =>
+        queueBookingNotification({
+          requestId: request._id.toString(),
+          status: 'rejected',
+        }),
+      ),
     );
 
     sendSlotEvent(

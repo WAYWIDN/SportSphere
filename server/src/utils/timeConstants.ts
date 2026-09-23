@@ -1,0 +1,1 @@
+export const MINIMUM_SLOT_DURATION_MS = 30 * 60 * 1000;

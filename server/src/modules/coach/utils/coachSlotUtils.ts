@@ -1,14 +1,14 @@
 import { CoachSlot } from '../model/coachSlotModel';
 
-export const MINIMUM_SLOT_DURATION = 30 * 60 * 1000;
-
 export const hasSlotOverlap = async (
   coachId: string,
+  date: string,
   startEpoch: number,
   endEpoch: number,
 ) => {
   return CoachSlot.exists({
     coachId,
+    date,
     status: { $in: ['available', 'booked'] },
     startEpoch: { $lt: endEpoch },
     endEpoch: { $gt: startEpoch },

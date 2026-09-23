@@ -1,4 +1,16 @@
 import { z } from 'zod';
+import { MINIMUM_SLOT_DURATION_MS } from '../../../utils/timeConstants';
+
+const dateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must use YYYY-MM-DD format')
+  .refine((date) => {
+    const parsedDate = new Date(date);
+    return (
+      !Number.isNaN(parsedDate.getTime()) &&
+      parsedDate.toISOString().slice(0, 10) === date
+    );
+  }, 'Date is invalid');
 
 const coachingCenterSchema = z.object({
   name: z.string().min(1),
@@ -17,7 +29,7 @@ export const coachProfileRequestSchema = z.object({
 
 export const coachSlotRequestSchema = z
   .object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    date: dateSchema,
     startEpoch: z.number().int().positive(),
     endEpoch: z.number().int().positive(),
   })
@@ -30,7 +42,7 @@ export const coachSlotRequestSchema = z
       });
     }
 
-    if (slot.endEpoch - slot.startEpoch < 30 * 60 * 1000) {
+    if (slot.endEpoch - slot.startEpoch < MINIMUM_SLOT_DURATION_MS) {
       context.addIssue({
         code: 'custom',
         path: ['endEpoch'],
@@ -48,14 +60,11 @@ export const slotIdParamsSchema = z.object({
 });
 
 export const coachDateQuerySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: dateSchema,
 });
 
 export const coachSlotsQuerySchema = z.object({
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+  date: z.string().pipe(dateSchema).optional(),
 });
 
 export const coachListQuerySchema = z.object({
