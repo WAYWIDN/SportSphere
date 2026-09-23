@@ -178,6 +178,7 @@ export const updateSessionRequestController = async (
       await sessionRequest.save();
       await queueBookingNotification({
         requestId: sessionRequest._id.toString(),
+        requestType: 'coach',
         status: 'rejected',
       });
       if (slot) {
@@ -262,6 +263,7 @@ export const updateSessionRequestController = async (
       otherPendingRequests.map((request) =>
         queueBookingNotification({
           requestId: request._id.toString(),
+          requestType: 'coach',
           status: 'rejected',
         }),
       ),

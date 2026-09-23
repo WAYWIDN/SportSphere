@@ -72,6 +72,23 @@ export const subvenueIdParamsSchema = z.object({
   subvenueId: objectIdSchema,
 });
 
+export const venueSlotParamsSchema = z.object({
+  subvenueId: objectIdSchema,
+  slotId: objectIdSchema,
+});
+
 export const slotIdParamsSchema = z.object({ slotId: objectIdSchema });
+
+export const venueBookingRequestIdParamsSchema = z.object({
+  requestId: objectIdSchema,
+});
+
+export const venueBookingRequestStatusSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+});
+
+export const venueBookingRequestListQuerySchema = z.object({
+  lastRequestId: objectIdSchema.optional(),
+});
 
 export const venueDateQuerySchema = z.object({ date: dateSchema });

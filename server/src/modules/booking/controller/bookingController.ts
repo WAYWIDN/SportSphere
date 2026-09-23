@@ -4,6 +4,7 @@ import { CoachSlot } from '../../coach/model/coachSlotModel';
 import { SessionRequest } from '../../coach/model/sessionRequestModel';
 import { sendSlotEvent } from '../../coach/utils/slotEventUtils';
 import { VenueSlot } from '../../venue-owner/model/slotModel';
+import { VenueBookingRequest } from '../../venue-owner/model/venueBookingRequestModel';
 import { sendSlotEvent as sendVenueSlotEvent } from '../../venue-owner/utils/slotEventUtils';
 import { Booking } from '../model/bookingModel';
 import { queueBookingNotification } from '../utils/bookingNotificationQueue';
@@ -108,6 +109,12 @@ export const cancelBookingController = async (req: Request, res: Response) => {
         );
       }
     } else if (booking.providerType === 'venue') {
+      if (booking.sourceVenueRequestId) {
+        await VenueBookingRequest.findByIdAndUpdate(
+          booking.sourceVenueRequestId,
+          { status: 'cancelled', updatedAt: new Date() },
+        );
+      }
       const slot = await VenueSlot.findOneAndUpdate(
         { _id: booking.resourceId, status: 'booked' },
         { status: 'available', updatedAt: new Date() },

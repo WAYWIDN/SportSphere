@@ -1,10 +1,13 @@
 import { Job, Worker } from 'bullmq';
+import { Types } from 'mongoose';
 import Redis from 'ioredis';
 import envConfig from '../config/envConfig';
 import { transporter } from '../config/nodeMailerConfig';
 import { Booking } from '../modules/booking/model/bookingModel';
 import { SessionRequest } from '../modules/coach/model/sessionRequestModel';
 import { CoachSlot } from '../modules/coach/model/coachSlotModel';
+import { VenueBookingRequest } from '../modules/venue-owner/model/venueBookingRequestModel';
+import { VenueSlot } from '../modules/venue-owner/model/slotModel';
 import {
   BookingNotificationData,
   bookingNotificationQueue,
@@ -14,23 +17,47 @@ import { User } from '../modules/auth/model/userModel';
 
 const sendBookingNotification = async (job: Job<BookingNotificationData>) => {
   if (job.data.status === 'rejected') {
-    if (!job.data.requestId) {
-      throw new Error('Request ID is required for rejected notifications');
+    if (!job.data.requestId || !job.data.requestType) {
+      throw new Error('Request ID and request type are required');
     }
 
-    const request = await SessionRequest.findById(job.data.requestId).lean();
-    if (!request) {
-      throw new Error(`Session request not found: ${job.data.requestId}`);
-    }
-    if (request.status !== 'rejected') {
-      return;
+    let userId: Types.ObjectId;
+    let providerId: Types.ObjectId;
+    let slot;
+
+    if (job.data.requestType === 'coach') {
+      const request = await SessionRequest.findById(job.data.requestId).lean();
+      if (!request) {
+        throw new Error(`Session request not found: ${job.data.requestId}`);
+      }
+      if (request.status !== 'rejected') {
+        return;
+      }
+      userId = request.userId;
+      providerId = request.coachId;
+      slot = await CoachSlot.findById(request.slotId).lean();
+    } else {
+      const request = await VenueBookingRequest.findById(
+        job.data.requestId,
+      ).lean();
+      if (!request) {
+        throw new Error(
+          `Venue booking request not found: ${job.data.requestId}`,
+        );
+      }
+      if (request.status !== 'rejected') {
+        return;
+      }
+      userId = request.userId;
+      providerId = request.venueOwnerId;
+      slot = await VenueSlot.findById(request.slotId).lean();
     }
 
-    const slot = await CoachSlot.findById(request.slotId).lean();
     const [user, provider] = await Promise.all([
-      User.findById(request.userId).select('email').lean(),
-      User.findById(request.coachId).select('email').lean(),
+      User.findById(userId).select('email').lean(),
+      User.findById(providerId).select('email').lean(),
     ]);
+
     if (!user || !provider || !slot) {
       throw new Error(`Request participants not found: ${job.data.requestId}`);
     }
@@ -56,6 +83,7 @@ const sendBookingNotification = async (job: Job<BookingNotificationData>) => {
   if (!booking) {
     throw new Error(`Booking not found: ${job.data.bookingId}`);
   }
+
   if (booking.status !== job.data.status) {
     return;
   }
@@ -64,17 +92,20 @@ const sendBookingNotification = async (job: Job<BookingNotificationData>) => {
     User.findById(booking.userId).select('email').lean(),
     User.findById(booking.providerId).select('email').lean(),
   ]);
+
   if (!user || !provider) {
     throw new Error(`Booking participants not found: ${job.data.bookingId}`);
+  }
+
+  let subject = 'SportSphere - Booking cancelled';
+  if (job.data.status === 'confirmed') {
+    subject = 'SportSphere - Booking confirmed';
   }
 
   await transporter.sendMail({
     from: envConfig.EMAIL_USER,
     to: [user.email, provider.email],
-    subject:
-      job.data.status === 'confirmed'
-        ? 'SportSphere - Booking confirmed'
-        : 'SportSphere - Booking cancelled',
+    subject,
     html: getBookingNotificationTemplate(
       job.data.status,
       booking.startEpoch,

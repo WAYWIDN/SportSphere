@@ -5,7 +5,9 @@ export interface IBooking extends Document {
   providerId: Types.ObjectId;
   providerType: 'coach' | 'venue';
   resourceId: Types.ObjectId;
-  sourceRequestId: Types.ObjectId;
+  sourceRequestId?: Types.ObjectId;
+  sourceGameId?: Types.ObjectId;
+  sourceVenueRequestId?: Types.ObjectId;
   startEpoch: number;
   endEpoch: number;
   status: 'confirmed' | 'cancelled' | 'completed';
@@ -21,8 +23,20 @@ const bookingSchema = new Schema<IBooking>({
   sourceRequestId: {
     type: Schema.Types.ObjectId,
     ref: 'SessionRequest',
-    required: true,
     unique: true,
+    sparse: true,
+  },
+  sourceGameId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Game',
+    unique: true,
+    sparse: true,
+  },
+  sourceVenueRequestId: {
+    type: Schema.Types.ObjectId,
+    ref: 'VenueBookingRequest',
+    unique: true,
+    sparse: true,
   },
   startEpoch: { type: Number, required: true },
   endEpoch: { type: Number, required: true },

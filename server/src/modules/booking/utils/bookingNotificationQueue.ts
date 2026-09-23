@@ -3,10 +3,12 @@ import Redis from 'ioredis';
 import envConfig from '../../../config/envConfig';
 
 export type BookingNotificationStatus = 'confirmed' | 'rejected' | 'cancelled';
+export type BookingRequestType = 'coach' | 'venue';
 
 export interface BookingNotificationData {
   bookingId?: string;
   requestId?: string;
+  requestType?: BookingRequestType;
   status: BookingNotificationStatus;
 }
 

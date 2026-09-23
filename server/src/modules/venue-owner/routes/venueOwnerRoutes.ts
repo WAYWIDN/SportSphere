@@ -19,6 +19,11 @@ import {
   updateVenueController,
 } from '../controller/venueController';
 import {
+  createVenueBookingRequestController,
+  getVenueBookingRequestsController,
+  updateVenueBookingRequestController,
+} from '../controller/venueBookingRequestController';
+import {
   createSlotController,
   deleteSlotController,
   getSlotsController,
@@ -30,9 +35,13 @@ import {
   subvenueIdParamsSchema,
   subvenueRequestSchema,
   venueDateQuerySchema,
+  venueBookingRequestIdParamsSchema,
+  venueBookingRequestListQuerySchema,
+  venueBookingRequestStatusSchema,
   venueIdParamsSchema,
   venueListQuerySchema,
   venueRequestSchema,
+  venueSlotParamsSchema,
 } from '../schema/venueRequestSchema';
 
 const venueOwnerRouter: Router = Router();
@@ -124,6 +133,29 @@ venueOwnerRouter.delete(
   ...venueOwnerAuth,
   validateParams(slotIdParamsSchema),
   deleteSlotController,
+);
+
+venueOwnerRouter.post(
+  '/v1/subvenues/:subvenueId/slots/:slotId/booking-requests',
+  authMiddleware,
+  requireRole('player'),
+  validateParams(venueSlotParamsSchema),
+  createVenueBookingRequestController,
+);
+venueOwnerRouter.get(
+  '/v1/venue-owner/booking-requests',
+  authMiddleware,
+  requireRole('venue-owner'),
+  validateQuery(venueBookingRequestListQuerySchema),
+  getVenueBookingRequestsController,
+);
+venueOwnerRouter.patch(
+  '/v1/venue-owner/booking-requests/:requestId',
+  authMiddleware,
+  requireRole('venue-owner'),
+  validateParams(venueBookingRequestIdParamsSchema),
+  validate(venueBookingRequestStatusSchema),
+  updateVenueBookingRequestController,
 );
 
 export default venueOwnerRouter;
