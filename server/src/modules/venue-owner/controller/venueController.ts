@@ -23,17 +23,52 @@ export const createVenueController = async (req: Request, res: Response) => {
   }
 };
 
-export const getVenuesController = async (req: Request, res: Response) => {
-  const lastVenueId = req.query.lastVenueId as string | undefined;
+export const searchVenuesController = async (req: Request, res: Response) => {
+  const { name, city, state, country, sport, facility, lastVenueId } =
+    req.body as {
+      name?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      sport?: string;
+      facility?: string;
+      lastVenueId?: string;
+    };
 
   try {
-    const venues = await Venue.find({
+    const filter: Record<string, unknown> = {
       ownerId: req.userMetadata?.id,
-      ...(lastVenueId ? { _id: { $lt: new Types.ObjectId(lastVenueId) } } : {}),
-    })
-      .sort({ _id: -1 })
-      .limit(11)
-      .lean();
+    };
+
+    if (name) {
+      filter.name = { $regex: name, $options: 'i' };
+    }
+
+    if (city) {
+      filter['location.city'] = { $regex: city, $options: 'i' };
+    }
+
+    if (state) {
+      filter['location.state'] = { $regex: state, $options: 'i' };
+    }
+
+    if (country) {
+      filter['location.country'] = { $regex: country, $options: 'i' };
+    }
+
+    if (sport) {
+      filter.sports = { $regex: sport, $options: 'i' };
+    }
+
+    if (facility) {
+      filter.facilities = { $regex: facility, $options: 'i' };
+    }
+
+    if (lastVenueId) {
+      filter._id = { $lt: new Types.ObjectId(lastVenueId) };
+    }
+
+    const venues = await Venue.find(filter).sort({ _id: -1 }).limit(11).lean();
 
     const hasNext = venues.length > 10;
     const page = venues.slice(0, 10);
@@ -48,10 +83,10 @@ export const getVenuesController = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error retrieving venues:', error);
+    console.error('Error searching venues:', error);
     return res
       .status(500)
-      .json({ success: false, message: 'Failed to retrieve venues' });
+      .json({ success: false, message: 'Failed to search venues' });
   }
 };
 

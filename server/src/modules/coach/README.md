@@ -19,7 +19,8 @@ The coach module manages coach profiles, coach availability slots, and player re
 
 - `POST /v1/coach/profile`
 - `PATCH /v1/coach/profile`
-- `GET /v1/coaches`
+- `POST /v1/coaches/search`
+  - Searches coaches. Body fields (all optional): `sport`, `city`, `state`, `minExperience`, `maxExperience`, `lastCoachId`.
 - `GET /v1/coaches/:coachId`
 
 ### Slots

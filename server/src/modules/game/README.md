@@ -17,10 +17,13 @@ The game module lets players create public games for venue slots and invite othe
 
 ## Endpoints
 
-- `GET /v1/games`
-  - Public game list with game-ID pagination.
+- `POST /v1/games/search`
+  - Searches active games. Body fields (all optional):
+    `subvenueId`, `sport`, `date`, `status` (`forming` | `ready`), `minPlayers`, `maxPlayers`, `lastGameId`.
 - `GET /v1/games/:gameId`
   - Public game details.
+- `GET /v1/games/:gameId/stream`
+  - Streams real-time SSE updates for a game (requires player role).
 - `POST /v1/games`
   - Creates a game.
 - `POST /v1/games/:gameId/join-request`

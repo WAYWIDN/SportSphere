@@ -79,16 +79,49 @@ export const getCoachProfileController = async (
   }
 };
 
-export const getCoachProfilesController = async (
+export const searchCoachProfilesController = async (
   req: Request,
   res: Response,
 ) => {
-  const lastCoachId = req.query.lastCoachId as string | undefined;
+  const { sport, city, state, minExperience, maxExperience, lastCoachId } =
+    req.body as {
+      sport?: string;
+      city?: string;
+      state?: string;
+      minExperience?: number;
+      maxExperience?: number;
+      lastCoachId?: string;
+    };
 
   try {
-    const profiles = await CoachProfile.find(
-      lastCoachId ? { _id: { $lt: new Types.ObjectId(lastCoachId) } } : {},
-    )
+    const filter: Record<string, unknown> = {};
+
+    if (sport) {
+      filter.sports = { $regex: sport, $options: 'i' };
+    }
+
+    if (city) {
+      filter['coachingCenter.city'] = { $regex: city, $options: 'i' };
+    }
+
+    if (state) {
+      filter['coachingCenter.state'] = { $regex: state, $options: 'i' };
+    }
+
+    if (minExperience !== undefined) {
+      filter.experience = { $gte: minExperience };
+    }
+
+    if (maxExperience !== undefined) {
+      const existing = (filter.experience as Record<string, number>) ?? {};
+      filter.experience = { ...existing, $lte: maxExperience };
+    }
+
+    if (lastCoachId) {
+      filter._id = { $lt: new Types.ObjectId(lastCoachId) };
+    }
+
+    const profiles = await CoachProfile.find(filter)
       .sort({ _id: -1 })
       .limit(11)
       .lean();
@@ -106,9 +139,9 @@ export const getCoachProfilesController = async (
       },
     });
   } catch (error) {
-    console.error('Error retrieving coach profiles:', error);
+    console.error('Error searching coach profiles:', error);
     return res
       .status(500)
-      .json({ success: false, message: 'Failed to retrieve coach profiles' });
+      .json({ success: false, message: 'Failed to search coach profiles' });
   }
 };

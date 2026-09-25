@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import { redisClient } from '../../../config/redisConfig';
 import { User } from '../model/userModel';
 import { UserProfile } from '../../profile-management/model/userProfileModel';
-import { sendOTPEmailService } from '../service/sendOTPService';
 import { generateOTP, otpRateLimiter } from '../utils/otpUtils';
 import { generateJWT, calculateJWTExpiration } from '../utils/jwtUtils';
 import { hashPassword, comparePassword } from '../utils/passwordUtils';
+import { queueOTPEmail } from '../utils/otpEmailQueue';
 
 const OTP_EXPIRATION_TIME = 10 * 60; // 10 minutes in seconds
 
@@ -38,9 +38,10 @@ export const sendOTPController = async (req: Request, res: Response) => {
   try {
     const isWithinLimit = await otpRateLimiter(email, type);
     if (!isWithinLimit) {
-      return res
-        .status(429)
-        .json({ success: false, message: 'Too many requests' });
+      return res.status(429).json({
+        success: false,
+        message: 'Too many requests, Try After 1 Day',
+      });
     }
   } catch (error) {
     console.error('Error in OTP rate limiter:', error);
@@ -58,7 +59,11 @@ export const sendOTPController = async (req: Request, res: Response) => {
   try {
     await redisClient.del(redisKey); // delete any existing OTP for the email
     await redisClient.setex(redisKey, OTP_EXPIRATION_TIME, otp);
-    await sendOTPEmailService(email, otp, type);
+    await queueOTPEmail({
+      email,
+      otp,
+      type,
+    });
     return res
       .status(200)
       .json({ success: true, message: 'OTP sent successfully' });

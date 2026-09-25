@@ -55,11 +55,11 @@ export const startGameNotificationWorker = () => {
   );
 
   worker.on('completed', (job) => {
-    console.log(`Game notification sent: ${job.data.gameId}`);
+    console.log(`[Worker] Game notification sent: ${job.data.gameId}`);
   });
 
   worker.on('failed', (job, error) => {
-    console.error(`Game notification failed: ${job?.data.gameId}`, error);
+    console.error(`[Worker] Game notification failed: ${job?.data.gameId}`, error);
   });
 
   return worker;

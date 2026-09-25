@@ -1,11 +1,11 @@
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../utils/api";
 
 export async function uploadFile(file: File): Promise<string> {
   const resource_type = file.type === "application/pdf" ? "raw" : "image";
 
-  const sigRes = await axios.post(
-    `${API_URL}/v1/upload/signed-url`,
+  const sigRes = await api.post(
+    `/v1/upload/signed-url`,
     { resource_type },
     { withCredentials: true },
   );

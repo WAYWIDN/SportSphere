@@ -12,7 +12,7 @@ import {
   createGameController,
   createJoinRequestController,
   getGameController,
-  getGamesController,
+  searchGamesController,
   getJoinRequestsController,
   streamGameController,
   updateJoinRequestController,
@@ -22,15 +22,15 @@ import {
   gameIdParamsSchema,
   gameJoinRequestParamsSchema,
   gameJoinRequestStatusSchema,
-  gameListQuerySchema,
+  gameSearchBodySchema,
 } from '../schema/gameRequestSchema';
 
 const gameRouter: Router = Router();
 
-gameRouter.get(
-  '/v1/games',
-  validateQuery(gameListQuerySchema),
-  getGamesController,
+gameRouter.post(
+  '/v1/games/search',
+  validate(gameSearchBodySchema),
+  searchGamesController,
 );
 
 gameRouter.get(

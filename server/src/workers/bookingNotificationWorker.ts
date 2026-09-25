@@ -127,7 +127,7 @@ export const startBookingNotificationWorker = () => {
 
   worker.on('completed', (job) => {
     const notificationId = job.data.bookingId ?? job.data.requestId;
-    console.log(`Booking notification sent: ${notificationId}`);
+    console.log(`[Worker] Booking notification sent: ${notificationId}`);
   });
 
   worker.on('failed', (job, error) => {

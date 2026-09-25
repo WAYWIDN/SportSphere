@@ -94,32 +94,70 @@ export const createGameController = async (req: Request, res: Response) => {
   }
 };
 
-export const getGamesController = async (req: Request, res: Response) => {
-  const { subvenueId, date, lastGameId } = req.query as {
+export const searchGamesController = async (req: Request, res: Response) => {
+  const {
+    subvenueId,
+    sport,
+    date,
+    status,
+    minPlayers,
+    maxPlayers,
+    lastGameId,
+  } = req.body as {
     subvenueId?: string;
+    sport?: string;
     date?: string;
+    status?: 'forming' | 'ready';
+    minPlayers?: number;
+    maxPlayers?: number;
     lastGameId?: string;
   };
 
   try {
-    let slotIds: Types.ObjectId[] | undefined;
-    if (date) {
-      const slots = await VenueSlot.find({ date }).select('_id').lean();
-      slotIds = slots.map((slot) => slot._id);
+    const filter: Record<string, unknown> = {};
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $in: ['forming', 'ready'] };
     }
 
-    const games = await Game.find({
-      status: { $in: ['forming', 'ready'] },
-      ...(subvenueId ? { subvenueId } : {}),
-      ...(slotIds ? { slotId: { $in: slotIds } } : {}),
-      ...(lastGameId ? { _id: { $lt: new Types.ObjectId(lastGameId) } } : {}),
-    })
+    if (subvenueId) {
+      filter.subvenueId = subvenueId;
+    }
+
+    if (sport && !subvenueId) {
+      const matchingSubvenues = await Subvenue.find({
+        sport: { $regex: sport, $options: 'i' },
+      })
+        .select('_id')
+        .lean();
+      filter.subvenueId = { $in: matchingSubvenues.map((sv) => sv._id) };
+    }
+
+    if (date) {
+      const slots = await VenueSlot.find({ date }).select('_id').lean();
+      filter.slotId = { $in: slots.map((slot) => slot._id) };
+    }
+    if (minPlayers !== undefined) {
+      filter.minimumPlayers = { $lte: minPlayers };
+    }
+
+    if (maxPlayers !== undefined) {
+      filter.maximumPlayers = { $gte: maxPlayers };
+    }
+
+    if (lastGameId) {
+      filter._id = { $lt: new Types.ObjectId(lastGameId) };
+    }
+
+    const games = await Game.find(filter)
       .sort({ _id: -1 })
       .limit(PAGE_SIZE + 1)
       .populate('creatorId', 'email')
       .populate('subvenueId')
       .populate('slotId')
       .lean();
+
     const page = getPage(games);
 
     return res.status(200).json({
@@ -132,10 +170,10 @@ export const getGamesController = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error retrieving games:', error);
+    console.error('Error searching games:', error);
     return res
       .status(500)
-      .json({ success: false, message: 'Failed to retrieve games' });
+      .json({ success: false, message: 'Failed to search games' });
   }
 };
 

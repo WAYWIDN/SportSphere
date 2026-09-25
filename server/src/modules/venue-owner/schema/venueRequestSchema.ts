@@ -66,6 +66,19 @@ export const venueIdParamsSchema = z.object({ venueId: objectIdSchema });
 
 export const venueListQuerySchema = z.object({
   lastVenueId: objectIdSchema.optional(),
+  name: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  sport: z.string().min(1).optional(),
+});
+
+export const venueSearchBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  state: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  sport: z.string().min(1).optional(),
+  facility: z.string().min(1).optional(),
+  lastVenueId: objectIdSchema.optional(),
 });
 
 export const subvenueIdParamsSchema = z.object({

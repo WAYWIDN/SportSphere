@@ -13,12 +13,13 @@ import venueOwnerRouter from './modules/venue-owner/routes/venueOwnerRoutes';
 import gameRouter from './modules/game/routes/gameRoutes';
 import { getUploadSignature } from './service/imageUploadService';
 import { authMiddleware } from './middleware/authMiddleWare';
+import envConfig from './config/envConfig';
 
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: envConfig.CLIENT_URL,
     credentials: true,
   }),
 );

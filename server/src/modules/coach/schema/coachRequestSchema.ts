@@ -72,6 +72,21 @@ export const coachListQuerySchema = z.object({
     .string()
     .regex(/^[a-f\d]{24}$/i)
     .optional(),
+  sport: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  minExperience: z.coerce.number().int().min(0).optional(),
+});
+
+export const coachSearchBodySchema = z.object({
+  sport: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  state: z.string().min(1).optional(),
+  minExperience: z.number().int().min(0).optional(),
+  maxExperience: z.number().int().min(0).optional(),
+  lastCoachId: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i)
+    .optional(),
 });
 
 export const sessionRequestListQuerySchema = z.object({

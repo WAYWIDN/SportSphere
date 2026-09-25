@@ -35,6 +35,18 @@ export const gameListQuerySchema = z.object({
   subvenueId: objectIdSchema.optional(),
   date: dateSchema.optional(),
   lastGameId: objectIdSchema.optional(),
+  sport: z.string().min(1).optional(),
+  status: z.enum(['forming', 'ready']).optional(),
+});
+
+export const gameSearchBodySchema = z.object({
+  subvenueId: objectIdSchema.optional(),
+  sport: z.string().min(1).optional(),
+  date: dateSchema.optional(),
+  status: z.enum(['forming', 'ready']).optional(),
+  minPlayers: z.number().int().min(1).optional(),
+  maxPlayers: z.number().int().min(1).optional(),
+  lastGameId: objectIdSchema.optional(),
 });
 
 export const gameIdParamsSchema = z.object({ gameId: objectIdSchema });

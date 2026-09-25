@@ -14,7 +14,7 @@ import {
   getSubvenueController,
   getSubvenuesController,
   getVenueController,
-  getVenuesController,
+  searchVenuesController,
   updateSubvenueController,
   updateVenueController,
 } from '../controller/venueController';
@@ -39,7 +39,7 @@ import {
   venueBookingRequestListQuerySchema,
   venueBookingRequestStatusSchema,
   venueIdParamsSchema,
-  venueListQuerySchema,
+  venueSearchBodySchema,
   venueRequestSchema,
   venueSlotParamsSchema,
 } from '../schema/venueRequestSchema';
@@ -53,11 +53,11 @@ venueOwnerRouter.post(
   validate(venueRequestSchema),
   createVenueController,
 );
-venueOwnerRouter.get(
-  '/v1/venues',
+venueOwnerRouter.post(
+  '/v1/venues/search',
   ...venueOwnerAuth,
-  validateQuery(venueListQuerySchema),
-  getVenuesController,
+  validate(venueSearchBodySchema),
+  searchVenuesController,
 );
 venueOwnerRouter.get(
   '/v1/venues/:venueId',

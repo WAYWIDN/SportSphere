@@ -29,7 +29,8 @@ Venue owner
 ### Venues
 
 - `POST /v1/venues`
-- `GET /v1/venues`
+- `POST /v1/venues/search`
+  - Searches venues. Body fields (all optional): `name`, `city`, `state`, `country`, `sport`, `facility`, `lastVenueId`.
 - `GET /v1/venues/:venueId`
 - `PATCH /v1/venues/:venueId`
 - `DELETE /v1/venues/:venueId`

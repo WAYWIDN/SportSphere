@@ -9,7 +9,7 @@ import {
 import {
   createCoachProfileController,
   getCoachProfileController,
-  getCoachProfilesController,
+  searchCoachProfilesController,
   updateCoachProfileController,
 } from '../controller/coachProfileController';
 import {
@@ -24,7 +24,7 @@ import {
   coachSlotRequestSchema,
   coachDateQuerySchema,
   coachIdParamsSchema,
-  coachListQuerySchema,
+  coachSearchBodySchema,
   coachSlotsQuerySchema,
   slotIdParamsSchema,
 } from '../schema/coachRequestSchema';
@@ -47,10 +47,10 @@ coachRouter.patch(
   updateCoachProfileController,
 );
 
-coachRouter.get(
-  '/v1/coaches',
-  validateQuery(coachListQuerySchema),
-  getCoachProfilesController,
+coachRouter.post(
+  '/v1/coaches/search',
+  validate(coachSearchBodySchema),
+  searchCoachProfilesController,
 );
 coachRouter.get(
   '/v1/coaches/:coachId',
