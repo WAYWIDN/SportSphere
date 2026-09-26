@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import {
-  ArrowRight,
-  Mail,
-  Lock,
-  KeyRound,
-  Eye,
-  EyeOff,
-  ArrowLeft,
-} from "lucide-react";
+import { ArrowRight, Mail, Lock, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import { authApi } from "../api/auth.api";
 
@@ -19,9 +11,7 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [step, setStep] = useState<"send-otp" | "verify-otp" | "register">(
-    "send-otp",
-  );
+  const [step, setStep] = useState<"send-otp" | "verify-otp" | "register">("send-otp");
   const navigate = useNavigate();
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -32,9 +22,7 @@ export default function RegisterPage() {
       toast.success("OTP has been sent to your email!");
       setStep("verify-otp");
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Failed to send OTP. Please try again.",
-      );
+      toast.error(err.response?.data?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -48,9 +36,7 @@ export default function RegisterPage() {
       toast.success("OTP verified successfully!");
       setStep("register");
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Invalid OTP. Please try again.",
-      );
+      toast.error(err.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -64,10 +50,7 @@ export default function RegisterPage() {
       toast.success("Account created successfully!");
       navigate("/login");
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.message ||
-          "Failed to create account. Please try again.",
-      );
+      toast.error(err.response?.data?.message || "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -84,16 +67,14 @@ export default function RegisterPage() {
       return;
     }
 
-    navigate(-1);
+    navigate("/login");
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#f5f4f1] text-[#111315] p-6">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f4f1] text-[#111315] p-6">
       <div className="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-xl shadow-black/5 border border-black/5">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-semibold tracking-tighter mb-2">
-            Create an account
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tighter mb-2">Create an account</h1>
           <p className="text-sm text-black/60">
             {step === "send-otp" && "Join the Sportsphere community"}
             {step === "verify-otp" && `Enter the 6-digit OTP sent to ${email}`}
@@ -104,9 +85,7 @@ export default function RegisterPage() {
         {step === "send-otp" && (
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
-                Email
-              </label>
+              <label className="block text-sm font-medium mb-2 text-black/80">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
                   <Mail size={18} />
@@ -135,9 +114,7 @@ export default function RegisterPage() {
         {step === "verify-otp" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
-                OTP
-              </label>
+              <label className="block text-sm font-medium mb-2 text-black/80">OTP</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
                   <KeyRound size={18} />
@@ -167,9 +144,7 @@ export default function RegisterPage() {
         {step === "register" && (
           <form onSubmit={handleRegister} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
-                Password
-              </label>
+              <label className="block text-sm font-medium mb-2 text-black/80">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
                   <Lock size={18} />
@@ -199,8 +174,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-[#111315] px-5 py-3.5 text-sm font-medium text-white transition hover:bg-black/80 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating account..." : "Sign up"}{" "}
-              <ArrowRight size={16} />
+              {loading ? "Creating account..." : "Sign up"} <ArrowRight size={16} />
             </button>
           </form>
         )}
@@ -208,12 +182,10 @@ export default function RegisterPage() {
         <div className="mt-8 text-center flex flex-col gap-3">
           {step !== "send-otp" && (
             <button
-              type="button"
               onClick={handleBack}
               className="inline-flex items-center justify-center gap-1.5 text-sm font-medium text-black/60 hover:text-black transition"
             >
-              <ArrowLeft size={16} />
-              Go back
+              <ArrowLeft size={16} /> Go back
             </button>
           )}
 
@@ -228,6 +200,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
     } catch (err: any) {
       toast.error(
         err.response?.data?.message ||
-          "Failed to send reset link. Please try again.",
+        "Failed to send reset link. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
     } catch (err: any) {
       toast.error(
         err.response?.data?.message ||
-          "Failed to reset password. Please try again.",
+        "Failed to reset password. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -89,13 +89,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#f5f4f1] text-[#111315] p-6">
-      <div className="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-xl shadow-black/5 border border-black/5">
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6">
+      <div className="w-full max-w-md bg-card text-card-foreground rounded-[2.5rem] p-8 shadow-xl shadow-black/5 border border-border">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-semibold tracking-tightermb-2">
+          <h1 className="text-3xl font-semibold tracking-tight mb-2">
             Forgot Password
           </h1>
-          <p className="text-sm text-black/60">
+          <p className="text-sm text-muted-foreground">
             {step === "send-otp" &&
               "Enter your email and we'll send you an OTP."}
             {step === "verify-otp" && `Enter the 6-digit OTP sent to ${email}`}
@@ -107,11 +107,11 @@ export default function ForgotPasswordPage() {
         {step === "send-otp" && (
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
+              <label className="block text-sm font-medium mb-2 text-foreground/80">
                 Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
                   <Mail size={18} />
                 </div>
                 <input
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/15 bg-[#f5f4f1]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 transition"
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 transition"
                   placeholder="you@example.com"
                 />
               </div>
@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-[#111315] px-5 py-3.5 text-sm font-medium text-white transition hover:bg-black/80 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Sending..." : "Send OTP"} <ArrowRight size={16} />
             </button>
@@ -138,11 +138,11 @@ export default function ForgotPasswordPage() {
         {step === "verify-otp" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
+              <label className="block text-sm font-medium mb-2 text-foreground/80">
                 OTP
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
                   <KeyRound size={18} />
                 </div>
                 <input
@@ -151,7 +151,7 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setOtp(e.target.value)}
                   required
                   maxLength={6}
-                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/15 bg-[#f5f4f1]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 transition tracking-[0.5em] font-mono"
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 transition tracking-[0.5em] font-mono"
                   placeholder="------"
                 />
               </div>
@@ -160,7 +160,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-[#111315] px-5 py-3.5 text-sm font-medium text-white transition hover:bg-black/80 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Verifying..." : "Verify OTP"} <ArrowRight size={16} />
             </button>
@@ -170,11 +170,11 @@ export default function ForgotPasswordPage() {
         {step === "reset-password" && (
           <form onSubmit={handleResetPassword} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-black/80">
+              <label className="block text-sm font-medium mb-2 text-foreground/80">
                 New Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
                   <Lock size={18} />
                 </div>
                 <input
@@ -184,13 +184,13 @@ export default function ForgotPasswordPage() {
                   required
                   pattern="^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{6,}$"
                   title="Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
-                  className="w-full pl-11 pr-11 py-3 rounded-2xl border border-black/15 bg-[#f5f4f1]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 transition"
+                  className="w-full pl-11 pr-11 py-3 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 transition"
                   placeholder="New password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-black/40 hover:text-black/60 transition"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -200,7 +200,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-[#111315] px-5 py-3.5 text-sm font-medium text-white transition hover:bg-black/80 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Updating..." : "Update Password"}{" "}
               <ArrowRight size={16} />
@@ -212,13 +212,13 @@ export default function ForgotPasswordPage() {
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-black/60 hover:text-black transition"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition cursor-pointer"
           >
             <ArrowLeft size={16} />
             {step === "send-otp" ? "Back to login" : "Go back"}
           </button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

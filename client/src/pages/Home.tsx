@@ -331,7 +331,7 @@ function VenueCard({
     <article
       className={`group relative min-h-72 overflow-hidden rounded-[2rem] ${image} p-6`}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-transparent" />
 
       <div className="relative flex h-full flex-col justify-between">
         <div className="flex justify-end">
@@ -343,7 +343,7 @@ function VenueCard({
         <div className="text-white">
           <p className="text-sm text-white/70">{place}</p>
 
-          <h3 className="mt-1 text-3xl font-medium tracking-[-.05em]">
+          <h3 className="mt-1 text-3xl font-medium tracking-tighter">
             {name}
           </h3>
 
