@@ -20,11 +20,12 @@ import {
   streamCoachSlotController,
 } from '../controller/coachSlotController';
 import {
-  coachProfileRequestSchema,
-  coachSlotRequestSchema,
   coachDateQuerySchema,
   coachIdParamsSchema,
+  coachProfileRequestSchema,
+  coachPublicSlotsQuerySchema,
   coachSearchBodySchema,
+  coachSlotRequestSchema,
   coachSlotsQuerySchema,
   slotIdParamsSchema,
 } from '../schema/coachRequestSchema';
@@ -52,6 +53,7 @@ coachRouter.post(
   validate(coachSearchBodySchema),
   searchCoachProfilesController,
 );
+
 coachRouter.get(
   '/v1/coaches/:coachId',
   validateParams(coachIdParamsSchema),
@@ -85,7 +87,7 @@ coachRouter.delete(
 coachRouter.get(
   '/v1/coaches/:coachId/slots',
   validateParams(coachIdParamsSchema),
-  validateQuery(coachDateQuerySchema),
+  validateQuery(coachPublicSlotsQuerySchema),
   getPublicCoachSlotsController,
 );
 

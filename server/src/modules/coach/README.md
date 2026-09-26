@@ -21,21 +21,27 @@ The coach module manages coach profiles, coach availability slots, and player re
 - `PATCH /v1/coach/profile`
 - `POST /v1/coaches/search`
   - Searches coaches. Body fields (all optional): `sport`, `city`, `state`, `minExperience`, `maxExperience`, `lastCoachId`.
+  - Uses cursor-based pagination with `lastCoachId`.
 - `GET /v1/coaches/:coachId`
+  - Returns the coach profile, including `profilePictureUrl`.
 
 ### Slots
 
 - `POST /v1/coach/slots`
 - `GET /v1/coach/slots`
+  - Supports cursor-based pagination using `lastStartEpoch`.
 - `DELETE /v1/coach/slots/:slotId`
 - `GET /v1/coaches/:coachId/slots`
+  - Supports cursor-based pagination using `lastStartEpoch`.
 - `GET /v1/coaches/:coachId/slots/events`
 
 ### Session Requests
 
 - `POST /v1/slots/:slotId/requests`
 - `GET /v1/user/session-requests`
+  - Supports cursor-based pagination using `lastRequestId`.
 - `GET /v1/coach/session-requests`
+  - Supports cursor-based pagination using `lastRequestId`.
 - `PATCH /v1/coach/session-requests/:requestId`
 
 ## Rules

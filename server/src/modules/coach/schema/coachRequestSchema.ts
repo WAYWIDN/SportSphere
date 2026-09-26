@@ -64,7 +64,13 @@ export const coachDateQuerySchema = z.object({
 });
 
 export const coachSlotsQuerySchema = z.object({
-  date: z.string().pipe(dateSchema).optional(),
+  date: dateSchema.optional(),
+  lastStartEpoch: z.coerce.number().int().positive().optional(),
+});
+
+export const coachPublicSlotsQuerySchema = z.object({
+  date: dateSchema,
+  lastStartEpoch: z.coerce.number().int().positive().optional(),
 });
 
 export const coachListQuerySchema = z.object({

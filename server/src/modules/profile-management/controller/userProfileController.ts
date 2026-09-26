@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserProfile } from '../model/userProfileModel';
 import { ApplicationCoachOrVenueOwner } from '../model/applyForCoachOrVenueOwnerControllerSchema';
 import { User } from '../../auth/model/userModel';
+import { CoachProfile } from '../../coach/model/coachProfileModel';
 import { Types } from 'mongoose';
 import { checkProfileCompleted } from '../utils/checkProfileCompletedUtils';
 
@@ -87,17 +88,7 @@ export const updateUserProfileController = async (
 
   // As a coach&venue-owner you need to fill all the required fields in the profile before you can update it.
   if (role == 'coach' || role == 'venue-owner') {
-    const existingProfile = await UserProfile.findOne({ userId: id });
-    if (!existingProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'User profile not found' });
-    }
-    const mergedProfileData = {
-      ...existingProfile.toObject(),
-      ...req.body.profileData,
-    };
-    const isProfileCompleted = checkProfileCompleted(mergedProfileData);
+    const isProfileCompleted = checkProfileCompleted(req.body.profileData);
     if (!isProfileCompleted) {
       res.status(400).json({
         success: false,
@@ -106,6 +97,7 @@ export const updateUserProfileController = async (
       return;
     }
   }
+
   const updateData = req.body.profileData;
   const allowedFields = [
     'firstName',
@@ -132,6 +124,7 @@ export const updateUserProfileController = async (
   };
 
   try {
+    console.log('ok3');
     const updatedProfile = await UserProfile.findOneAndUpdate(
       { userId: id },
       updateDataWithTimestamp,
@@ -141,6 +134,18 @@ export const updateUserProfileController = async (
       return res
         .status(404)
         .json({ success: false, message: 'User profile not found' });
+    }
+
+    // Update for coach too
+    if (role === 'coach' && updateData.profilePictureUrl !== undefined) {
+      console.log('ok4');
+      await CoachProfile.findOneAndUpdate(
+        { coachId: id },
+        {
+          profilePictureUrl: updateData.profilePictureUrl,
+          updatedAt: new Date(),
+        },
+      );
     }
     return res.status(200).json({ success: true, data: updatedProfile });
   } catch (error) {

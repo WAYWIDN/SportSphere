@@ -16,18 +16,44 @@ const coachSlotSchema = new Schema<ICoachSlot>({
     ref: 'User',
     required: true,
   },
-  date: { type: String, required: true },
-  startEpoch: { type: Number, required: true },
-  endEpoch: { type: Number, required: true },
+  date: {
+    type: String,
+    required: true,
+  },
+  startEpoch: {
+    type: Number,
+    required: true,
+  },
+  endEpoch: {
+    type: Number,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['available', 'booked', 'cancelled'],
     default: 'available',
   },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 coachSlotSchema.index({ coachId: 1, date: 1, status: 1, startEpoch: 1 });
+
+coachSlotSchema.index(
+  {
+    coachId: 1,
+    date: 1,
+    startEpoch: 1,
+  },
+  {
+    unique: true,
+  },
+);
 
 export const CoachSlot = model<ICoachSlot>('CoachSlot', coachSlotSchema);

@@ -3,6 +3,18 @@ import { CoachSlot } from '../model/coachSlotModel';
 import { hasSlotOverlap } from '../utils/coachSlotUtils';
 import { addSlotClient, sendSlotEvent } from '../utils/slotEventUtils';
 
+const PAGE_SIZE = 10;
+
+const getPage = <T>(items: T[]) => {
+  const hasNext = items.length > PAGE_SIZE;
+  const data = items.slice(0, PAGE_SIZE);
+
+  return {
+    data,
+    hasNext,
+  };
+};
+
 export const createCoachSlotController = async (
   req: Request,
   res: Response,
@@ -43,21 +55,43 @@ export const createCoachSlotController = async (
 export const getCoachSlotsController = async (req: Request, res: Response) => {
   const coachId = req.userMetadata?.id as string;
   const date = req.query.date as string | undefined;
+  const lastStartEpoch = req.query.lastStartEpoch
+    ? Number(req.query.lastStartEpoch)
+    : undefined;
 
   try {
     const slots = await CoachSlot.find({
       coachId,
       ...(date ? { date } : {}),
+      ...(lastStartEpoch !== undefined
+        ? { startEpoch: { $gt: lastStartEpoch } }
+        : {}),
     })
       .sort({ startEpoch: 1 })
+      .limit(PAGE_SIZE + 1)
       .lean();
 
-    return res.status(200).json({ success: true, data: slots });
+    const page = getPage(slots);
+
+    const lastStartEpochValue =
+      page.data.length > 0 ? page.data[page.data.length - 1].startEpoch : null;
+
+    return res.status(200).json({
+      success: true,
+      data: page.data,
+      pagination: {
+        limit: PAGE_SIZE,
+        lastStartEpoch: lastStartEpochValue,
+        hasNext: page.hasNext,
+      },
+    });
   } catch (error) {
     console.error('Error retrieving coach slots:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Failed to retrieve coach slots' });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve coach slots',
+    });
   }
 };
 
@@ -67,22 +101,44 @@ export const getPublicCoachSlotsController = async (
 ) => {
   const coachId = req.params.coachId as string;
   const date = req.query.date as string;
+  const lastStartEpoch = req.query.lastStartEpoch
+    ? Number(req.query.lastStartEpoch)
+    : undefined;
 
   try {
     const slots = await CoachSlot.find({
       coachId,
       date,
       status: 'available',
+      ...(lastStartEpoch !== undefined
+        ? { startEpoch: { $gt: lastStartEpoch } }
+        : {}),
     })
       .sort({ startEpoch: 1 })
+      .limit(PAGE_SIZE + 1)
       .lean();
 
-    return res.status(200).json({ success: true, data: slots });
+    const page = getPage(slots);
+
+    const lastStartEpochValue =
+      page.data.length > 0 ? page.data[page.data.length - 1].startEpoch : null;
+
+    return res.status(200).json({
+      success: true,
+      data: page.data,
+      pagination: {
+        limit: PAGE_SIZE,
+        lastStartEpoch: lastStartEpochValue,
+        hasNext: page.hasNext,
+      },
+    });
   } catch (error) {
     console.error('Error retrieving public coach slots:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Failed to retrieve coach slots' });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve coach slots',
+    });
   }
 };
 

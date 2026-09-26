@@ -1,4 +1,4 @@
-import { Document, model, Schema, Types } from 'mongoose';
+import { Document, model, Schema, Types } from "mongoose";
 
 export interface ICoachProfile extends Document {
   coachId: Types.ObjectId;
@@ -6,6 +6,7 @@ export interface ICoachProfile extends Document {
   experience: number;
   sports: string[];
   photos: string[];
+  profilePictureUrl?: string;
   coachingCenter: {
     name: string;
     address: string;
@@ -19,25 +20,72 @@ export interface ICoachProfile extends Document {
 const coachProfileSchema = new Schema<ICoachProfile>({
   coachId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
     unique: true,
   },
-  bio: { type: String, required: true, trim: true },
-  experience: { type: Number, required: true, min: 0 },
-  sports: { type: [String], required: true },
-  photos: { type: [String], default: [] },
-  coachingCenter: {
-    name: { type: String, required: true, trim: true },
-    address: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
-    state: { type: String, required: true, trim: true },
+
+  bio: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+
+  experience: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+
+  sports: {
+    type: [String],
+    required: true,
+  },
+
+  photos: {
+    type: [String],
+    default: [],
+  },
+
+  profilePictureUrl: {
+    type: String,
+  },
+
+  coachingCenter: {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    state: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 export const CoachProfile = model<ICoachProfile>(
-  'CoachProfile',
+  "CoachProfile",
   coachProfileSchema,
 );
