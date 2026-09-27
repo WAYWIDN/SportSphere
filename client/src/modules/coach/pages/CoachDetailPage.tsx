@@ -510,6 +510,36 @@ export default function CoachDetailPage() {
           ) : null}
         </div>
 
+        {/* Training Center Photos */}
+        {coach.photos && coach.photos.length > 0 ? (
+          <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-5">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Training Center Gallery
+              </h2>
+
+              <p className="text-xs text-muted-foreground mt-1">
+                Photos of the training center and facilities
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {coach.photos.map((photo, index) => (
+                <div
+                  key={`photo-${index}`}
+                  className="relative w-full h-56 rounded-2xl overflow-hidden border border-border bg-muted"
+                >
+                  <img
+                    src={photo}
+                    alt={`Training center photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Available Slots */}
         <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6">
           {/* Header */}

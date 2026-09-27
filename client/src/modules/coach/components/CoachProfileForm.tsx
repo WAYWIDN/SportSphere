@@ -11,17 +11,25 @@ export default function CoachProfileForm() {
   const [profile, setProfile] = useState<CoachProfileData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+
   const [bio, setBio] = useState("");
   const [experience, setExperience] = useState<number | "">("");
   const [sportsInput, setSportsInput] = useState("");
+
   const [centerName, setCenterName] = useState("");
   const [centerAddress, setCenterAddress] = useState("");
   const [centerCity, setCenterCity] = useState("");
   const [centerState, setCenterState] = useState("");
+
+  // New training center images
   const [profileImages, setProfileImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-  const existingImages = profile && profile.photos ? profile.photos : [];
+  // Existing training center images marked for deletion
+  const [removedExistingImageIndices, setRemovedExistingImageIndices] =
+    useState<number[]>([]);
+
+  const existingImages = profile?.photos || [];
 
   const inputClasses =
     "w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition";
@@ -34,6 +42,7 @@ export default function CoachProfileForm() {
 
     try {
       const res = await coachApi.getProfile(coachId);
+
       if (res.success && res.data) {
         setProfile(res.data);
         setBio(res.data.bio || "");
@@ -57,6 +66,7 @@ export default function CoachProfileForm() {
     }
   }, [user]);
 
+  // Create previews for newly selected files
   useEffect(() => {
     const urls = profileImages.map((file) => URL.createObjectURL(file));
     setPreviewUrls(urls);
@@ -71,18 +81,25 @@ export default function CoachProfileForm() {
     if (files.length === 0) return;
 
     const imageFiles = files.filter((file) => file.type.startsWith("image/"));
-    const combinedFiles = [...profileImages, ...imageFiles].slice(
-      0,
-      Math.max(0, 5 - existingImages.length),
-    );
-    setProfileImages(combinedFiles);
+
+    const currentExistingCount =
+      existingImages.length - removedExistingImageIndices.length;
+    const availableSlots = 5 - currentExistingCount - profileImages.length;
+    const newFiles = imageFiles.slice(0, Math.max(0, availableSlots));
+
+    setProfileImages((prev) => [...prev, ...newFiles]);
 
     e.target.value = "";
   };
 
-  const removeImage = (index: number) => {
-    const updatedFiles = profileImages.filter((_, i) => i !== index);
-    setProfileImages(updatedFiles);
+  const removeImage = (index: number, isExisting: boolean = false) => {
+    if (isExisting) {
+      setRemovedExistingImageIndices((prev) =>
+        prev.includes(index) ? prev : [...prev, index],
+      );
+    } else {
+      setProfileImages((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -105,37 +122,47 @@ export default function CoachProfileForm() {
 
     setSavingProfile(true);
 
-    let profileImagesUrls: string[] = [];
-    profileImagesUrls = await Promise.all(
-      profileImages.map(async (file) => {
-        try {
-          const url = await uploadFile(file);
-          return url;
-        } catch (err: any) {
-          toast.error(
-            err.response?.data?.message || err.message || "Failed to upload image",
-          );
-          return "";
-        }
-      }),
-    );
-
-    // Filter out any failed uploads
-    profileImagesUrls = profileImagesUrls.filter(Boolean);
-    const allImages = [...existingImages, ...profileImagesUrls];
-
     try {
+      // Upload newly selected training center images
+      const newImageUrls = await Promise.all(
+        profileImages.map(async (file) => {
+          try {
+            return await uploadFile(file);
+          } catch (err: any) {
+            toast.error(
+              err.response?.data?.message ||
+                err.message ||
+                "Failed to upload image",
+            );
+
+            return "";
+          }
+        }),
+      );
+
+      const validNewImageUrls = newImageUrls.filter(Boolean);
+
+      // Keep existing images that were not removed
+      const remainingExistingImages = existingImages.filter(
+        (_, index) => !removedExistingImageIndices.includes(index),
+      );
+
+      // Final list of training center photos
+      const allImages = [...remainingExistingImages, ...validNewImageUrls];
+
       const payload = {
         bio,
         experience: Number(experience),
         sports: sportsList,
+
         coachingCenter: {
           name: centerName,
           address: centerAddress,
           city: centerCity,
           state: centerState,
         },
-        profileImages: allImages,
+
+        photos: allImages,
       };
 
       if (profile) {
@@ -144,6 +171,9 @@ export default function CoachProfileForm() {
         if (res.success) {
           toast.success("Coach profile updated successfully!");
           setProfile(res.data);
+          // Clear temporary image state
+          setProfileImages([]);
+          setRemovedExistingImageIndices([]);
         }
       } else {
         const res = await coachApi.createProfile(payload);
@@ -151,6 +181,8 @@ export default function CoachProfileForm() {
         if (res.success) {
           toast.success("Coach profile created successfully!");
           setProfile(res.data);
+          setProfileImages([]);
+          setRemovedExistingImageIndices([]);
         }
       }
     } catch (err: any) {
@@ -162,7 +194,10 @@ export default function CoachProfileForm() {
     }
   };
 
-  const totalImages = existingImages.length + profileImages.length;
+  const totalImages =
+    existingImages.length -
+    removedExistingImageIndices.length +
+    profileImages.length;
 
   return (
     <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6">
@@ -281,18 +316,34 @@ export default function CoachProfileForm() {
             {totalImages > 0 && (
               <div className="w-full min-w-0 overflow-x-auto pb-2">
                 <div className="flex w-max gap-3">
-                  {existingImages.map((image, index) => (
-                    <div
-                      key={`existing-${index}`}
-                      className="relative w-40 h-28 rounded-2xl overflow-hidden border border-border bg-muted shrink-0"
-                    >
-                      <img
-                        src={image}
-                        alt={`Training center ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
+                  {existingImages.map((image, index) => {
+                    const isRemoved =
+                      removedExistingImageIndices.includes(index);
+
+                    if (isRemoved) return null;
+
+                    return (
+                      <div
+                        key={`existing-${index}`}
+                        className="relative w-40 h-28 rounded-2xl overflow-hidden border border-border bg-muted shrink-0 group"
+                      >
+                        <img
+                          src={image}
+                          alt={`Training center ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index, true)}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`Remove image ${index + 1}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
 
                   {previewUrls.map((url, index) => (
                     <div
@@ -409,4 +460,3 @@ export default function CoachProfileForm() {
     </div>
   );
 }
-
