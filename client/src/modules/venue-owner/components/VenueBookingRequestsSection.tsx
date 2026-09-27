@@ -7,19 +7,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { coachApi, type SessionRequestItem } from "../api/coach.api";
-import SessionRequestCard from "../cards/SessionRequestCard";
+import { venueOwnerApi, type BookingRequestItem } from "../api/venueOwner.api";
+import VenueBookingRequestCard from "../cards/VenueBookingRequestCard";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
-export default function SessionRequestsSection() {
-  const [requests, setRequests] = useState<SessionRequestItem[]>([]);
+export default function VenueBookingRequestsSection() {
+  const [requests, setRequests] = useState<BookingRequestItem[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(
     null,
   );
-
-  // Filter
+  // Status Filter
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // Pagination
@@ -43,7 +43,7 @@ export default function SessionRequestsSection() {
     setHasNext(false);
 
     try {
-      const res = await coachApi.getCoachSessionRequests(status, cursor);
+      const res = await venueOwnerApi.getMyBookingRequests(status, cursor);
 
       if (res.success) {
         setRequests(res.data || []);
@@ -52,8 +52,9 @@ export default function SessionRequestsSection() {
       }
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || "Failed to load session requests",
+        err.response?.data?.message || "Failed to load booking requests",
       );
+
       setRequests([]);
     } finally {
       setLoadingRequests(false);
@@ -75,7 +76,7 @@ export default function SessionRequestsSection() {
     setLoadingPage(true);
 
     try {
-      const res = await coachApi.getCoachSessionRequests(
+      const res = await venueOwnerApi.getMyBookingRequests(
         statusFilter,
         nextCursor,
       );
@@ -101,7 +102,7 @@ export default function SessionRequestsSection() {
     setLoadingPage(true);
 
     try {
-      const res = await coachApi.getCoachSessionRequests(
+      const res = await venueOwnerApi.getMyBookingRequests(
         statusFilter,
         prevCursor,
       );
@@ -127,21 +128,26 @@ export default function SessionRequestsSection() {
     setProcessingRequestId(requestId);
 
     try {
-      const res = await coachApi.updateSessionRequestStatus(requestId, status);
+      const res = await venueOwnerApi.updateBookingRequestStatus(
+        requestId,
+        status,
+      );
 
       if (res.success) {
         if (status === "approved") {
-          toast.success("Session request accepted!");
+          toast.success("Booking request approved!");
         } else {
-          toast.info("Session request rejected.");
+          toast.info("Booking request rejected.");
         }
 
         // Refetch current page without resetting pagination
         const currentCursor = cursorHistory[currentPage - 1];
-        const updated = await coachApi.getCoachSessionRequests(
+
+        const updated = await venueOwnerApi.getMyBookingRequests(
           statusFilter,
           currentCursor,
         );
+
         if (updated.success) {
           setRequests(updated.data || []);
           setNextCursor(updated.pagination?.lastRequestId || null);
@@ -150,30 +156,44 @@ export default function SessionRequestsSection() {
       }
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || "Failed to update session request",
+        err.response?.data?.message || "Failed to update booking request",
       );
     } finally {
       setProcessingRequestId(null);
     }
   };
 
-  const filterTabs: { key: StatusFilter; label: string }[] = [
-    { key: "all", label: "All Requests" },
-    { key: "pending", label: "Pending" },
-    { key: "approved", label: "Accepted" },
-    { key: "rejected", label: "Rejected" },
+  const filterTabs: {
+    key: StatusFilter;
+    label: string;
+  }[] = [
+    {
+      key: "all",
+      label: "All Requests",
+    },
+    {
+      key: "pending",
+      label: "Pending",
+    },
+    {
+      key: "approved",
+      label: "Accepted / Booked",
+    },
+    {
+      key: "rejected",
+      label: "Rejected",
+    },
   ];
 
   return (
-    <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6">
+    <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6 min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Player Session Requests
-          </h2>
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold tracking-tight">Booking Requests</h2>
+
           <p className="text-xs text-muted-foreground">
-            Approve or reject training requests from players
+            Review and respond to player court booking requests
           </p>
         </div>
 
@@ -183,7 +203,7 @@ export default function SessionRequestsSection() {
             fetchRequests(statusFilter, cursorHistory[currentPage - 1])
           }
           disabled={loadingRequests}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-muted transition cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-muted transition cursor-pointer self-start sm:self-auto shrink-0"
         >
           <RefreshCw
             size={12}
@@ -197,6 +217,7 @@ export default function SessionRequestsSection() {
       <div className="flex flex-wrap gap-2">
         {filterTabs.map((tab) => {
           const isActive = statusFilter === tab.key;
+
           return (
             <button
               key={tab.key}
@@ -214,13 +235,14 @@ export default function SessionRequestsSection() {
         })}
       </div>
 
-      {/* Requests List */}
+      {/* Requests */}
       {loadingRequests ? (
         <div className="py-12 text-center">
           <Loader2
             className="animate-spin text-primary mx-auto mb-2"
             size={28}
           />
+
           <p className="text-xs text-muted-foreground">Loading requests...</p>
         </div>
       ) : requests.length === 0 ? (
@@ -228,31 +250,37 @@ export default function SessionRequestsSection() {
           <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center text-muted-foreground">
             <Inbox size={22} />
           </div>
+
           <h3 className="text-sm font-bold">
             No {statusFilter !== "all" ? statusFilter : ""} Requests Found
           </h3>
+
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
             {statusFilter === "all"
-              ? "When players request training sessions with you, they will appear here."
-              : `There are currently no ${statusFilter} session requests.`}
+              ? "When players request slots at your venue, they will appear here."
+              : `There are currently no ${statusFilter} booking requests.`}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3">
+        <div className="space-y-4 min-w-0">
+          <div className="grid grid-cols-1 gap-3 min-w-0">
             {requests.map((request) => (
-              <SessionRequestCard
+              <VenueBookingRequestCard
                 key={request._id}
                 request={request}
-                isCoachView={true}
+                isVenueView={true}
                 isProcessing={processingRequestId === request._id}
-                onApprove={(id) => handleUpdateRequestStatus(id, "approved")}
-                onReject={(id) => handleUpdateRequestStatus(id, "rejected")}
+                onApprove={(requestId) =>
+                  handleUpdateRequestStatus(requestId, "approved")
+                }
+                onReject={(requestId) =>
+                  handleUpdateRequestStatus(requestId, "rejected")
+                }
               />
             ))}
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination */}
           {(currentPage > 1 || hasNext) && (
             <div className="flex items-center justify-center gap-3 pt-2">
               <button

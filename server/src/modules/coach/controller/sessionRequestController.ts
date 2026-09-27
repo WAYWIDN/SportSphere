@@ -115,16 +115,22 @@ export const getCoachSessionRequestsController = async (
   res: Response,
 ) => {
   const lastRequestId = req.query.lastRequestId as string | undefined;
+  const status = req.query.status as string | undefined;
 
   try {
-    const requests = await SessionRequest.find(
-      lastRequestId
-        ? {
-            coachId: req.userMetadata?.id,
-            _id: { $lt: new Types.ObjectId(lastRequestId) },
-          }
-        : { coachId: req.userMetadata?.id },
-    )
+    const filter: Record<string, unknown> = {
+      coachId: req.userMetadata?.id,
+    };
+
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    if (lastRequestId) {
+      filter._id = { $lt: new Types.ObjectId(lastRequestId) };
+    }
+
+    const requests = await SessionRequest.find(filter)
       .sort({ _id: -1 })
       .limit(11)
       .populate('userId', 'email')

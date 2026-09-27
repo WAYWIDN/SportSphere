@@ -34,6 +34,14 @@ export const coachSlotRequestSchema = z
     endEpoch: z.number().int().positive(),
   })
   .superRefine((slot, context) => {
+    if (slot.startEpoch <= Date.now()) {
+      context.addIssue({
+        code: 'custom',
+        path: ['startEpoch'],
+        message: 'Slot cannot be in the past',
+      });
+    }
+
     if (slot.endEpoch <= slot.startEpoch) {
       context.addIssue({
         code: 'custom',
@@ -100,6 +108,7 @@ export const sessionRequestListQuerySchema = z.object({
     .string()
     .regex(/^[a-f\d]{24}$/i)
     .optional(),
+  status: z.enum(['pending', 'approved', 'rejected', 'all']).optional(),
 });
 
 export const sessionRequestStatusSchema = z.object({

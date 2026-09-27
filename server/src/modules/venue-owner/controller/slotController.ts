@@ -33,7 +33,7 @@ export const createSlotController = async (req: Request, res: Response) => {
       endEpoch,
       price,
     });
-    sendSlotEvent(subvenueId, date, slot._id.toString(), 'slot-created', {
+    sendSlotEvent(subvenueId, date, slot._id.toString(), 'slot_created', {
       slot,
     });
     return res.status(201).json({
@@ -93,8 +93,8 @@ export const deleteSlotController = async (req: Request, res: Response) => {
       slot.subvenueId.toString(),
       slot.date,
       slot._id.toString(),
-      'slot-deleted',
-      {},
+      'slot_cancelled',
+      { slotId: slot._id.toString() },
     );
     return res
       .status(200)
@@ -128,7 +128,7 @@ export const streamSlotController = async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
-    res.write(`event: slots-state\ndata: ${JSON.stringify({ slots })}\n\n`);
+    res.write(`event: slots_state\ndata: ${JSON.stringify({ slots })}\n\n`);
 
     const removeClient = addSlotClient(subvenueId, date, res);
     const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 30000);

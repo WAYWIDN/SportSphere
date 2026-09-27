@@ -1,7 +1,8 @@
 import { Routes, Route } from "react-router";
 
 import Home from "./pages/Home.tsx";
-import Venue from "./pages/Venue.tsx";
+import VenueListPage from "./modules/venue-owner/pages/VenueListPage.tsx";
+import VenueDetailPage from "./modules/venue-owner/pages/VenueDetailPage.tsx";
 import Game from "./pages/Game.tsx";
 
 // Auth Pages
@@ -22,6 +23,8 @@ import UserProfileViewPage from "./modules/profile/pages/UserProfileViewPage.tsx
 
 // Admin Page
 import AdminApplicationsPage from "./modules/admin/pages/AdminApplicationsPage.tsx";
+import VenueOwnerDashboardPage from "./modules/venue-owner/pages/VenueOwnerDashboardPage.tsx";
+import VenueBookingRequestsPage from "./modules/venue-owner/pages/VenueBookingRequestsPage.tsx";
 
 export default function App() {
   return (
@@ -33,8 +36,11 @@ export default function App() {
       <Route path="/coach/:coachId" element={<CoachDetailPage />} />
       <Route path="/my-sessions" element={<PlayerSessionsPage />} />
 
-      <Route path="/venue" element={<Venue />} />
-      <Route path="/venues" element={<Venue />} />
+      <Route path="/venues" element={<VenueListPage />} />
+      <Route path="/venues/:venueId" element={<VenueDetailPage />} />
+      <Route path="/venue-owner" element={<VenueOwnerDashboardPage />} />
+      <Route path="/my-bookings" element={<VenueBookingRequestsPage />} />
+
       <Route path="/game" element={<Game />} />
       <Route path="/games" element={<Game />} />
 

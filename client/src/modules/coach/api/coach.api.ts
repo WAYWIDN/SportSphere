@@ -226,12 +226,19 @@ export const coachApi = {
     return response.data;
   },
 
-  getCoachSessionRequests: async (lastRequestId?: string) => {
-    let url = "/v1/coach/session-requests";
-
-    if (lastRequestId && lastRequestId.trim() !== "") {
-      url += `?lastRequestId=${encodeURIComponent(lastRequestId.trim())}`;
+  getCoachSessionRequests: async (
+    status?: string,
+    lastRequestId?: string,
+  ) => {
+    const params = new URLSearchParams();
+    if (status && status !== "all") {
+      params.set("status", status.trim());
     }
+    if (lastRequestId && lastRequestId.trim() !== "") {
+      params.set("lastRequestId", lastRequestId.trim());
+    }
+    const query = params.toString();
+    const url = query ? `/v1/coach/session-requests?${query}` : "/v1/coach/session-requests";
 
     const response = await api.get<{
       success: boolean;

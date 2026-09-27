@@ -326,15 +326,15 @@ export default function CoachDetailPage() {
         );
 
         if (coachId) {
+          const currentCursor = cursorHistory[currentPage - 1];
           const updatedSlots = await coachApi.getPublicSlots(
             coachId,
             selectedDate,
+            currentCursor,
           );
 
           if (updatedSlots.success) {
             setSlots(updatedSlots.data || []);
-            setCurrentPage(1);
-            setCursorHistory([undefined]);
             setNextCursor(updatedSlots.pagination.lastStartEpoch);
             setHasNextSlots(updatedSlots.pagination.hasNext);
           }

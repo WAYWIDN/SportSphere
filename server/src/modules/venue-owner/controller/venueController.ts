@@ -23,6 +23,23 @@ export const createVenueController = async (req: Request, res: Response) => {
   }
 };
 
+export const getMyVenuesController = async (req: Request, res: Response) => {
+  const ownerId = req.userMetadata?.id;
+
+  try {
+    const venues = await Venue.find({ ownerId }).sort({ _id: -1 }).lean();
+    return res.status(200).json({
+      success: true,
+      data: venues,
+    });
+  } catch (error) {
+    console.error('Error fetching owner venues:', error);
+    return res
+      .status(500)
+      .json({ success: false, message: 'Failed to fetch owner venues' });
+  }
+};
+
 export const searchVenuesController = async (req: Request, res: Response) => {
   const { name, city, state, country, sport, facility, lastVenueId } =
     req.body as {
@@ -36,9 +53,7 @@ export const searchVenuesController = async (req: Request, res: Response) => {
     };
 
   try {
-    const filter: Record<string, unknown> = {
-      ownerId: req.userMetadata?.id,
-    };
+    const filter: Record<string, unknown> = {};
 
     if (name) {
       filter.name = { $regex: name, $options: 'i' };

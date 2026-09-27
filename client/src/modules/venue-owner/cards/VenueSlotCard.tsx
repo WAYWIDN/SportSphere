@@ -1,17 +1,25 @@
-import { Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import type { CoachSlotData } from "../api/coach.api";
+import {
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  IndianRupee,
+} from "lucide-react";
+import type { VenueSlotData } from "../api/venueOwner.api";
 
-interface CoachSlotCardProps {
-  slot: CoachSlotData;
-  isCoachView?: boolean;
+interface VenueSlotCardProps {
+  slot: VenueSlotData;
+  isVenueView?: boolean;
   isActionLoading?: boolean;
-  onRequestSession?: (slotId: string) => void;
+  onRequestBooking?: (slotId: string) => void;
   onCancelSlot?: (slotId: string) => void;
 }
 
 export function formatTimeEpoch(epochMs: number): string {
   if (!epochMs) return "--:--";
+
   const date = new Date(epochMs);
+
   return date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -19,13 +27,13 @@ export function formatTimeEpoch(epochMs: number): string {
   });
 }
 
-export default function CoachSlotCard({
+export default function VenueSlotCard({
   slot,
-  isCoachView = false,
+  isVenueView = false,
   isActionLoading = false,
-  onRequestSession,
+  onRequestBooking,
   onCancelSlot,
-}: CoachSlotCardProps) {
+}: VenueSlotCardProps) {
   const startTime = formatTimeEpoch(slot.startEpoch);
   const endTime = formatTimeEpoch(slot.endEpoch);
 
@@ -54,31 +62,46 @@ export default function CoachSlotCard({
   };
 
   return (
-    <div className="bg-card rounded-3xl p-5 border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      {/* Time and Date info */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Clock size={16} className="text-foreground/70" />
-          <span className="text-sm font-bold text-foreground tracking-tight">
-            {startTime} – {endTime}
+    <div className="bg-card rounded-3xl p-5 border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 overflow-hidden">
+      {/* Time, Date, and Price info */}
+      <div className="space-y-1.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Clock size={16} className="text-foreground/70 shrink-0" />
+
+          <span className="text-sm font-bold text-foreground tracking-tight break-all">
+            {startTime} - {endTime}
           </span>
+
           {getStatusBadge()}
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Date:{" "}
-          <span className="font-mono text-foreground/80">{slot.date}</span>
-        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <p>
+            Date:{" "}
+            <span className="font-mono text-foreground/80 break-all">
+              {slot.date}
+            </span>
+          </p>
+
+          <span className="text-border">•</span>
+
+          <p className="flex items-center gap-0.5 font-semibold text-foreground/90">
+            <IndianRupee size={13} className="text-primary -mr-0.5" />
+            {slot.price}
+          </p>
+        </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2">
-        {/* Player View: Request Session Button */}
-        {!isCoachView && slot.status === "available" && onRequestSession ? (
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Player View: Request Booking Button */}
+        {!isVenueView &&
+        slot.status === "available" &&
+        onRequestBooking ? (
           <button
             type="button"
             disabled={isActionLoading}
-            onClick={() => onRequestSession(slot._id)}
+            onClick={() => onRequestBooking(slot._id)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 cursor-pointer shadow-sm"
           >
             {isActionLoading ? (
@@ -86,12 +109,12 @@ export default function CoachSlotCard({
             ) : (
               <CheckCircle2 size={13} />
             )}
-            Book Session
+            Request Booking
           </button>
         ) : null}
 
-        {/* Coach View: Cancel Slot Button */}
-        {isCoachView && slot.status === "available" && onCancelSlot ? (
+        {/* Venue Owner View: Cancel Slot Button */}
+        {isVenueView && slot.status === "available" && onCancelSlot ? (
           <button
             type="button"
             disabled={isActionLoading}

@@ -1,65 +1,61 @@
 import { Building, Loader2, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { CoachProfileData } from "../api/coach.api";
+import { toast } from "react-toastify";
+import { coachApi, type CoachProfileData } from "../api/coach.api";
+import { useAuth } from "../../../context/AuthContext";
+import { uploadFile } from "../../../service/cloudinary";
 
-interface CoachProfileFormProps {
-  profile: CoachProfileData | null;
-  loadingProfile: boolean;
-  savingProfile: boolean;
+export default function CoachProfileForm() {
+  const { user } = useAuth();
 
-  bio: string;
-  experience: number | "";
-  sportsInput: string;
-  centerName: string;
-  centerAddress: string;
-  centerCity: string;
-  centerState: string;
+  const [profile, setProfile] = useState<CoachProfileData | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [bio, setBio] = useState("");
+  const [experience, setExperience] = useState<number | "">("");
+  const [sportsInput, setSportsInput] = useState("");
+  const [centerName, setCenterName] = useState("");
+  const [centerAddress, setCenterAddress] = useState("");
+  const [centerCity, setCenterCity] = useState("");
+  const [centerState, setCenterState] = useState("");
+  const [profileImages, setProfileImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-  profileImages: File[];
-  existingImages?: string[];
+  const existingImages = profile && profile.photos ? profile.photos : [];
 
-  onBioChange: (value: string) => void;
-  onExperienceChange: (value: number | "") => void;
-  onSportsInputChange: (value: string) => void;
-  onCenterNameChange: (value: string) => void;
-  onCenterAddressChange: (value: string) => void;
-  onCenterCityChange: (value: string) => void;
-  onCenterStateChange: (value: string) => void;
-  onImagesChange: (files: File[]) => void;
-
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-export default function CoachProfileForm({
-  profile,
-  loadingProfile,
-  savingProfile,
-  bio,
-  experience,
-  sportsInput,
-  centerName,
-  centerAddress,
-  centerCity,
-  centerState,
-  profileImages,
-  existingImages = [],
-  onBioChange,
-  onExperienceChange,
-  onSportsInputChange,
-  onCenterNameChange,
-  onCenterAddressChange,
-  onCenterCityChange,
-  onCenterStateChange,
-  onImagesChange,
-  onSubmit,
-}: CoachProfileFormProps) {
   const inputClasses =
     "w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition";
 
   const labelClasses =
     "block text-xs font-semibold text-muted-foreground uppercase tracking-wider";
 
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const fetchMyProfile = async (coachId: string) => {
+    setLoadingProfile(true);
+
+    try {
+      const res = await coachApi.getProfile(coachId);
+      if (res.success && res.data) {
+        setProfile(res.data);
+        setBio(res.data.bio || "");
+        setExperience(res.data.experience ?? "");
+        setSportsInput(res.data.sports ? res.data.sports.join(", ") : "");
+        setCenterName(res.data.coachingCenter?.name || "");
+        setCenterAddress(res.data.coachingCenter?.address || "");
+        setCenterCity(res.data.coachingCenter?.city || "");
+        setCenterState(res.data.coachingCenter?.state || "");
+      }
+    } catch {
+      setProfile(null);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.role === "coach" && user.id) {
+      fetchMyProfile(user.id);
+    }
+  }, [user]);
 
   useEffect(() => {
     const urls = profileImages.map((file) => URL.createObjectURL(file));
@@ -79,14 +75,91 @@ export default function CoachProfileForm({
       0,
       Math.max(0, 5 - existingImages.length),
     );
-    onImagesChange(combinedFiles);
+    setProfileImages(combinedFiles);
 
     e.target.value = "";
   };
 
   const removeImage = (index: number) => {
     const updatedFiles = profileImages.filter((_, i) => i !== index);
-    onImagesChange(updatedFiles);
+    setProfileImages(updatedFiles);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const sportsList = sportsInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (sportsList.length === 0) {
+      toast.error("Please enter at least one sport");
+      return;
+    }
+
+    if (experience === "") {
+      toast.error("Please enter years of experience");
+      return;
+    }
+
+    setSavingProfile(true);
+
+    let profileImagesUrls: string[] = [];
+    profileImagesUrls = await Promise.all(
+      profileImages.map(async (file) => {
+        try {
+          const url = await uploadFile(file);
+          return url;
+        } catch (err: any) {
+          toast.error(
+            err.response?.data?.message || err.message || "Failed to upload image",
+          );
+          return "";
+        }
+      }),
+    );
+
+    // Filter out any failed uploads
+    profileImagesUrls = profileImagesUrls.filter(Boolean);
+    const allImages = [...existingImages, ...profileImagesUrls];
+
+    try {
+      const payload = {
+        bio,
+        experience: Number(experience),
+        sports: sportsList,
+        coachingCenter: {
+          name: centerName,
+          address: centerAddress,
+          city: centerCity,
+          state: centerState,
+        },
+        profileImages: allImages,
+      };
+
+      if (profile) {
+        const res = await coachApi.updateProfile(payload);
+
+        if (res.success) {
+          toast.success("Coach profile updated successfully!");
+          setProfile(res.data);
+        }
+      } else {
+        const res = await coachApi.createProfile(payload);
+
+        if (res.success) {
+          toast.success("Coach profile created successfully!");
+          setProfile(res.data);
+        }
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to save coach profile",
+      );
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const totalImages = existingImages.length + profileImages.length;
@@ -114,7 +187,7 @@ export default function CoachProfileForm({
           <p className="text-xs text-muted-foreground">Loading profile...</p>
         </div>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={handleSaveProfile} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className={labelClasses}>
@@ -124,7 +197,7 @@ export default function CoachProfileForm({
               <input
                 type="text"
                 value={sportsInput}
-                onChange={(e) => onSportsInputChange(e.target.value)}
+                onChange={(e) => setSportsInput(e.target.value)}
                 placeholder="Football, Tennis, Basketball"
                 required
                 className={inputClasses}
@@ -140,7 +213,7 @@ export default function CoachProfileForm({
                 max={50}
                 value={experience}
                 onChange={(e) =>
-                  onExperienceChange(
+                  setExperience(
                     e.target.value === "" ? "" : Number(e.target.value),
                   )
                 }
@@ -159,7 +232,7 @@ export default function CoachProfileForm({
             <textarea
               rows={4}
               value={bio}
-              onChange={(e) => onBioChange(e.target.value)}
+              onChange={(e) => setBio(e.target.value)}
               placeholder="Describe your training methodology, achievements, and programs..."
               required
               className={inputClasses}
@@ -264,7 +337,7 @@ export default function CoachProfileForm({
                 <input
                   type="text"
                   value={centerName}
-                  onChange={(e) => onCenterNameChange(e.target.value)}
+                  onChange={(e) => setCenterName(e.target.value)}
                   placeholder="Apex Sports Academy"
                   required
                   className={inputClasses}
@@ -277,7 +350,7 @@ export default function CoachProfileForm({
                 <input
                   type="text"
                   value={centerAddress}
-                  onChange={(e) => onCenterAddressChange(e.target.value)}
+                  onChange={(e) => setCenterAddress(e.target.value)}
                   placeholder="100 Champions Way"
                   required
                   className={inputClasses}
@@ -290,7 +363,7 @@ export default function CoachProfileForm({
                 <input
                   type="text"
                   value={centerCity}
-                  onChange={(e) => onCenterCityChange(e.target.value)}
+                  onChange={(e) => setCenterCity(e.target.value)}
                   placeholder="New York"
                   required
                   className={inputClasses}
@@ -303,7 +376,7 @@ export default function CoachProfileForm({
                 <input
                   type="text"
                   value={centerState}
-                  onChange={(e) => onCenterStateChange(e.target.value)}
+                  onChange={(e) => setCenterState(e.target.value)}
                   placeholder="NY"
                   required
                   className={inputClasses}
@@ -336,3 +409,4 @@ export default function CoachProfileForm({
     </div>
   );
 }
+

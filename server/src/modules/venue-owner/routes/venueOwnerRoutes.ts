@@ -11,6 +11,7 @@ import {
   createVenueController,
   deleteSubvenueController,
   deleteVenueController,
+  getMyVenuesController,
   getSubvenueController,
   getSubvenuesController,
   getVenueController,
@@ -53,9 +54,13 @@ venueOwnerRouter.post(
   validate(venueRequestSchema),
   createVenueController,
 );
+venueOwnerRouter.get(
+  '/v1/venue-owner/venues',
+  ...venueOwnerAuth,
+  getMyVenuesController,
+);
 venueOwnerRouter.post(
   '/v1/venues/search',
-  ...venueOwnerAuth,
   validate(venueSearchBodySchema),
   searchVenuesController,
 );
@@ -128,6 +133,7 @@ venueOwnerRouter.get(
   validateQuery(venueDateQuerySchema),
   streamSlotController,
 );
+
 venueOwnerRouter.delete(
   '/v1/slots/:slotId',
   ...venueOwnerAuth,

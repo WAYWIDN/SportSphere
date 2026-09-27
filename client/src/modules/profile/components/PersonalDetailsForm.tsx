@@ -107,6 +107,7 @@ export default function PersonalDetailsForm({
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => onPhoneNumberChange(e.target.value)}
+                maxLength={10}
                 placeholder="+1 234 567 890"
                 className={inputClasses}
               />

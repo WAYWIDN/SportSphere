@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { coachApi } from "../api/coach.api";
+import { venueOwnerApi } from "../api/venueOwner.api";
 
-export type TabKey = "slots" | "requests" | "profile";
+export type TabKey = "overview" | "slots" | "bookings" | "profile";
 
 interface DashboardTabsProps {
   activeTab: TabKey;
@@ -12,21 +12,21 @@ export default function DashboardTabs({
   activeTab,
   onTabChange,
 }: DashboardTabsProps) {
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
 
   useEffect(() => {
     const loadPendingCount = async () => {
       try {
-        const res = await coachApi.getCoachSessionRequests();
+        const res = await venueOwnerApi.getMyBookingRequests();
 
         if (res.success) {
           const pending = (res.data || []).filter(
             (request) => request.status === "pending",
           );
-          setPendingRequestsCount(pending.length);
+          setPendingBookingsCount(pending.length);
         }
       } catch {
-        setPendingRequestsCount(0);
+        setPendingBookingsCount(0);
       }
     };
 
@@ -48,25 +48,29 @@ export default function DashboardTabs({
 
   return (
     <div className="flex border-b border-border gap-2 pb-1">
+      <button type="button" onClick={() => onTabChange("overview")} className={tabClass("overview")}>
+        Overview
+      </button>
+
       <button type="button" onClick={() => onTabChange("slots")} className={tabClass("slots")}>
-        My Slots &amp; Schedule
+        Slots & Schedule
       </button>
 
       <button
         type="button"
-        onClick={() => onTabChange("requests")}
-        className={`${tabClass("requests")} relative`}
+        onClick={() => onTabChange("bookings")}
+        className={`${tabClass("bookings")} relative`}
       >
-        Session Requests
-        {pendingRequestsCount > 0 ? (
+        Booking Requests
+        {pendingBookingsCount > 0 ? (
           <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-foreground text-background font-bold">
-            {pendingRequestsCount}
+            {pendingBookingsCount}
           </span>
         ) : null}
       </button>
 
       <button type="button" onClick={() => onTabChange("profile")} className={tabClass("profile")}>
-        Coach Profile
+        Venue Profile
       </button>
     </div>
   );

@@ -94,14 +94,22 @@ export const getVenueBookingRequestsController = async (
   res: Response,
 ) => {
   const lastRequestId = req.query.lastRequestId as string | undefined;
+  const status = req.query.status as string | undefined;
 
   try {
-    const requests = await VenueBookingRequest.find({
+    const filter: Record<string, unknown> = {
       venueOwnerId: req.userMetadata?.id,
-      ...(lastRequestId
-        ? { _id: { $lt: new Types.ObjectId(lastRequestId) } }
-        : {}),
-    })
+    };
+
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    if (lastRequestId) {
+      filter._id = { $lt: new Types.ObjectId(lastRequestId) };
+    }
+
+    const requests = await VenueBookingRequest.find(filter)
       .sort({ _id: -1 })
       .limit(PAGE_SIZE + 1)
       .populate('userId', 'email')

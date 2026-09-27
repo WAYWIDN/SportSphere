@@ -14,27 +14,27 @@ const dateSchema = z
   }, 'Date is invalid');
 
 const locationSchema = z.object({
-  address: z.string().min(1),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  country: z.string().min(1),
-  pincode: z.string().min(1),
+  address: z.string().min(1).max(200),
+  city: z.string().min(1).max(100),
+  state: z.string().min(1).max(100),
+  country: z.string().min(1).max(100),
+  pincode: z.string().min(1).max(20),
 });
 
 export const venueRequestSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().min(1),
+  name: z.string().min(1).max(50),
+  description: z.string().min(1).max(500),
   location: locationSchema,
   sports: z.array(z.string().min(1)).min(1),
   facilities: z.array(z.string().min(1)).default([]),
-  images: z.array(z.url()).default([]),
+  images: z.array(z.string()).default([]),
 });
 
 export const subvenueRequestSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(50),
   sport: z.string().min(1),
-  description: z.string().min(1),
-  images: z.array(z.url()).default([]),
+  description: z.string().min(1).max(500),
+  images: z.array(z.string()).default([]),
 });
 
 const slotTimeSchema = z.object({
@@ -45,6 +45,14 @@ const slotTimeSchema = z.object({
 });
 
 export const slotRequestSchema = slotTimeSchema.superRefine((slot, context) => {
+  if (slot.startEpoch <= Date.now()) {
+    context.addIssue({
+      code: 'custom',
+      path: ['startEpoch'],
+      message: 'Slot cannot be in the past',
+    });
+  }
+
   if (slot.endEpoch <= slot.startEpoch) {
     context.addIssue({
       code: 'custom',
@@ -72,12 +80,12 @@ export const venueListQuerySchema = z.object({
 });
 
 export const venueSearchBodySchema = z.object({
-  name: z.string().min(1).optional(),
-  city: z.string().min(1).optional(),
-  state: z.string().min(1).optional(),
-  country: z.string().min(1).optional(),
-  sport: z.string().min(1).optional(),
-  facility: z.string().min(1).optional(),
+  name: z.string().min(1).max(50).optional(),
+  city: z.string().min(1).max(100).optional(),
+  state: z.string().min(1).max(100).optional(),
+  country: z.string().min(1).max(100).optional(),
+  sport: z.string().min(1).max(100).optional(),
+  facility: z.string().min(1).max(100).optional(),
   lastVenueId: objectIdSchema.optional(),
 });
 
@@ -102,6 +110,7 @@ export const venueBookingRequestStatusSchema = z.object({
 
 export const venueBookingRequestListQuerySchema = z.object({
   lastRequestId: objectIdSchema.optional(),
+  status: z.enum(['pending', 'approved', 'rejected', 'all']).optional(),
 });
 
 export const venueDateQuerySchema = z.object({ date: dateSchema });
