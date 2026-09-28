@@ -3,9 +3,8 @@ import {
   Inbox,
   Loader2,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import PageButtons from "../../../components/ui/PageButtons";
 import { toast } from "react-toastify";
 import { coachApi, type SessionRequestItem } from "../api/coach.api";
 import SessionRequestCard from "../cards/SessionRequestCard";
@@ -252,43 +251,13 @@ export default function SessionRequestsSection() {
             ))}
           </div>
 
-          {/* Pagination Controls */}
-          {(currentPage > 1 || hasNext) && (
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handlePrevPage}
-                disabled={currentPage <= 1 || loadingPage}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border bg-card text-xs font-semibold hover:bg-muted transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={14} />
-                Previous
-              </button>
-
-              <span className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                Page {currentPage}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleNextPage}
-                disabled={!hasNext || loadingPage}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border bg-card text-xs font-semibold hover:bg-muted transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {loadingPage ? (
-                  <>
-                    <Loader2 size={13} className="animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ChevronRight size={14} />
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+          <PageButtons
+            currentPage={currentPage}
+            hasNext={hasNext}
+            loading={loadingPage}
+            onPrevious={handlePrevPage}
+            onNext={handleNextPage}
+          />
         </div>
       )}
     </div>

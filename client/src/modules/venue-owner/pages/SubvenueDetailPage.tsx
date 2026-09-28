@@ -17,6 +17,7 @@ import {
 } from "../api/venueOwner.api";
 import { useAuth } from "../../../context/AuthContext";
 import VenueSlotCard from "../cards/VenueSlotCard";
+import CreateGameModal from "../../game/components/CreateGameModal";
 
 export default function SubvenueDetailPage() {
   const { venueId, subvenueId } = useParams<{
@@ -37,6 +38,7 @@ export default function SubvenueDetailPage() {
   const [slots, setSlots] = useState<VenueSlotData[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
+  const [selectedSlotForGame, setSelectedSlotForGame] = useState<VenueSlotData | null>(null);
 
   // Fetch subvenue details
   useEffect(() => {
@@ -114,77 +116,12 @@ export default function SubvenueDetailPage() {
         if (!cancelled) setLoadingSlots(false);
       }
 
-      // SSE stream
       try {
-        const eventSource = venueOwnerApi.getSlotsStream(
+        return venueOwnerApi.subscribeToSlots(
           subvenueId,
           selectedDate,
+          setSlots,
         );
-
-        eventSource.addEventListener("slots_state", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slots: VenueSlotData[];
-            };
-            if (parsed.slots) {
-              setSlots(parsed.slots);
-            }
-          } catch (e) {
-            console.error("Failed to parse slots_state event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_created", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slot: VenueSlotData;
-            };
-            const newSlot = parsed.slot;
-            if (newSlot && newSlot.date === selectedDate) {
-              setSlots((current) => {
-                if (current.some((s) => s._id === newSlot._id))
-                  return current;
-                return [...current, newSlot].sort(
-                  (a, b) => a.startEpoch - b.startEpoch,
-                );
-              });
-            }
-          } catch (e) {
-            console.error("Failed to parse slot_created event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_booked", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slotId: string;
-            };
-            setSlots((current) =>
-              current.map((s) =>
-                s._id === parsed.slotId ? { ...s, status: "booked" } : s,
-              ),
-            );
-          } catch (e) {
-            console.error("Failed to parse slot_booked event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_cancelled", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slotId: string;
-            };
-            setSlots((current) =>
-              current.filter((s) => s._id !== parsed.slotId),
-            );
-          } catch (e) {
-            console.error("Failed to parse slot_cancelled event:", e);
-          }
-        });
-
-        return () => {
-          eventSource.close();
-        };
       } catch (err) {
         console.error("SSE connection error:", err);
       }
@@ -423,11 +360,35 @@ export default function SubvenueDetailPage() {
                   isVenueView={false}
                   isActionLoading={bookingSlotId === slot._id}
                   onRequestBooking={handleBookingRequest}
+                  onCreateGame={(slot) => {
+                    if (!user) {
+                      toast.info("Please login to create a game");
+                      navigate("/login");
+                      return;
+                    }
+                    if (user.role !== "player") {
+                      toast.error("Only players can host games");
+                      return;
+                    }
+                    setSelectedSlotForGame(slot);
+                  }}
                 />
               ))}
             </div>
           )}
         </div>
+
+        {/* Create Game Modal */}
+        {selectedSlotForGame && subvenueId ? (
+          <CreateGameModal
+            isOpen={Boolean(selectedSlotForGame)}
+            onClose={() => setSelectedSlotForGame(null)}
+            subvenueId={subvenueId}
+            subvenueName={subvenue.name}
+            sportName={subvenue.sport}
+            slot={selectedSlotForGame}
+          />
+        ) : null}
       </div>
     </div>
   );

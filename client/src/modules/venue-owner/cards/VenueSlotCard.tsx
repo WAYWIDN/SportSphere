@@ -4,27 +4,18 @@ import {
   XCircle,
   Loader2,
   IndianRupee,
+  Users,
 } from "lucide-react";
 import type { VenueSlotData } from "../api/venueOwner.api";
+import { formatTimeEpoch } from "../../../utils/formatTime";
 
 interface VenueSlotCardProps {
   slot: VenueSlotData;
   isVenueView?: boolean;
   isActionLoading?: boolean;
   onRequestBooking?: (slotId: string) => void;
+  onCreateGame?: (slot: VenueSlotData) => void;
   onCancelSlot?: (slotId: string) => void;
-}
-
-export function formatTimeEpoch(epochMs: number): string {
-  if (!epochMs) return "--:--";
-
-  const date = new Date(epochMs);
-
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
 }
 
 export default function VenueSlotCard({
@@ -32,6 +23,7 @@ export default function VenueSlotCard({
   isVenueView = false,
   isActionLoading = false,
   onRequestBooking,
+  onCreateGame,
   onCancelSlot,
 }: VenueSlotCardProps) {
   const startTime = formatTimeEpoch(slot.startEpoch);
@@ -93,11 +85,21 @@ export default function VenueSlotCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
+        {/* Player View: Create Game Button */}
+        {!isVenueView && slot.status === "available" && onCreateGame ? (
+          <button
+            type="button"
+            onClick={() => onCreateGame(slot)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full border border-primary/30 text-primary hover:bg-primary/10 text-xs font-semibold transition cursor-pointer shadow-sm"
+          >
+            <Users size={13} />
+            Create Game
+          </button>
+        ) : null}
+
         {/* Player View: Request Booking Button */}
-        {!isVenueView &&
-        slot.status === "available" &&
-        onRequestBooking ? (
+        {!isVenueView && slot.status === "available" && onRequestBooking ? (
           <button
             type="button"
             disabled={isActionLoading}
@@ -109,7 +111,7 @@ export default function VenueSlotCard({
             ) : (
               <CheckCircle2 size={13} />
             )}
-            Request Booking
+            Book Directly
           </button>
         ) : null}
 

@@ -8,7 +8,11 @@ interface CoachCardProps {
 
 export default function CoachCard({ coach }: CoachCardProps) {
   const centerName = coach.coachingCenter?.name || "Independent Coaching";
-  const location = [coach.coachingCenter?.city, coach.coachingCenter?.state]
+  const location = [
+    coach.coachingCenter?.city,
+    coach.coachingCenter?.state,
+    coach.coachingCenter?.country,
+  ]
     .filter(Boolean)
     .join(", ");
 

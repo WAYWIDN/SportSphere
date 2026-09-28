@@ -41,6 +41,7 @@ export const gameListQuerySchema = z.object({
 
 export const gameSearchBodySchema = z.object({
   subvenueId: objectIdSchema.optional(),
+  subvenueName: z.string().min(1).optional(),
   sport: z.string().min(1).optional(),
   date: dateSchema.optional(),
   status: z.enum(['forming', 'ready']).optional(),

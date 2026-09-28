@@ -17,6 +17,8 @@ export const verifyOTPRequestSchema = z.object({
 
 export const registerUserRequestSchema = z.object({
   email: z.email({ message: 'Invalid email address' }),
+  firstName: z.string().trim().min(1, { message: 'First name is required' }),
+  lastName: z.string().trim().min(1, { message: 'Last name is required' }),
   password: z
     .string()
     .min(6, { message: 'Password must be at least 6 characters long' })

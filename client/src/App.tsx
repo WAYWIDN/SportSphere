@@ -4,7 +4,6 @@ import Home from "./pages/Home.tsx";
 import VenueListPage from "./modules/venue-owner/pages/VenueListPage.tsx";
 import VenueDetailPage from "./modules/venue-owner/pages/VenueDetailPage.tsx";
 import SubvenueDetailPage from "./modules/venue-owner/pages/SubvenueDetailPage.tsx";
-import Game from "./pages/Game.tsx";
 
 // Auth Pages
 import LoginPage from "./modules/auth/pages/LoginPage.tsx";
@@ -16,7 +15,6 @@ import ResetPasswordPage from "./modules/auth/pages/ResetPasswordPage.tsx";
 import CoachListPage from "./modules/coach/pages/CoachListPage.tsx";
 import CoachDetailPage from "./modules/coach/pages/CoachDetailPage.tsx";
 import CoachDashboardPage from "./modules/coach/pages/CoachDashboardPage.tsx";
-import PlayerSessionsPage from "./modules/coach/pages/PlayerSessionsPage.tsx";
 
 // Profile Pages
 import ProfilePage from "./modules/profile/pages/ProfilePage.tsx";
@@ -27,6 +25,13 @@ import AdminApplicationsPage from "./modules/admin/pages/AdminApplicationsPage.t
 import VenueOwnerDashboardPage from "./modules/venue-owner/pages/VenueOwnerDashboardPage.tsx";
 import VenueBookingRequestsPage from "./modules/venue-owner/pages/VenueBookingRequestsPage.tsx";
 
+// Game Pages
+import GameListPage from "./modules/game/pages/GameListPage.tsx";
+import GameDetailPage from "./modules/game/pages/GameDetailPage.tsx";
+
+// Session Page
+import SessionsPage from "./modules/session/pages/SessionsPage.tsx";
+
 export default function App() {
   return (
     <Routes>
@@ -35,7 +40,6 @@ export default function App() {
       <Route path="/coaches" element={<CoachListPage />} />
       <Route path="/coach/dashboard" element={<CoachDashboardPage />} />
       <Route path="/coach/:coachId" element={<CoachDetailPage />} />
-      <Route path="/my-sessions" element={<PlayerSessionsPage />} />
 
       <Route path="/venues" element={<VenueListPage />} />
       <Route path="/venues/:venueId" element={<VenueDetailPage />} />
@@ -46,8 +50,13 @@ export default function App() {
       <Route path="/venue-owner" element={<VenueOwnerDashboardPage />} />
       <Route path="/my-bookings" element={<VenueBookingRequestsPage />} />
 
-      <Route path="/game" element={<Game />} />
-      <Route path="/games" element={<Game />} />
+      <Route path="/game" element={<GameListPage />} />
+      <Route path="/games" element={<GameListPage />} />
+      <Route path="/games/:gameId" element={<GameDetailPage />} />
+      <Route path="/my-games" element={<GameListPage defaultTab="my-games" />} />
+
+      <Route path="/sessions" element={<SessionsPage />} />
+      <Route path="/my-sessions" element={<SessionsPage />} />
 
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/:userId" element={<UserProfileViewPage />} />

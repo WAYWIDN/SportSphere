@@ -11,30 +11,40 @@ import {
   DollarSign,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import PageButtons from "../../../components/ui/PageButtons";
 import {
   venueOwnerApi,
   type BookingRequestItem,
 } from "../api/venueOwner.api";
-import { formatTimeEpoch } from "../cards/VenueSlotCard";
+import { formatTimeEpoch } from "../../../utils/formatTime";
+import { formatUserName } from "../../../utils/formatUserName";
 
 export default function VenueBookingRequestsPage() {
   const [requests, setRequests] = useState<BookingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([
+    undefined,
+  ]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
 
   useEffect(() => {
     fetchRequests();
   }, []);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (cursor?: string) => {
     setLoading(true);
+    if (cursor === undefined) {
+      setCurrentPage(1);
+      setCursorHistory([undefined]);
+    }
     try {
-      const res = await venueOwnerApi.getMyBookingRequests();
+      const res = await venueOwnerApi.getMyBookingRequests(undefined, cursor);
       if (res.success) {
         setRequests(res.data || []);
-        setLastRequestId(res.pagination?.lastRequestId || null);
+        setNextCursor(res.pagination?.lastRequestId || null);
         setHasNext(res.pagination?.hasNext || false);
       }
     } catch (err: any) {
@@ -46,23 +56,45 @@ export default function VenueBookingRequestsPage() {
     }
   };
 
-  const handleLoadMore = async () => {
-    if (!lastRequestId || loadingMore) return;
-
-    setLoadingMore(true);
+  const handleNextPage = async () => {
+    if (!hasNext || !nextCursor || loadingPage) return;
+    const newPage = currentPage + 1;
+    const updatedHistory = [...cursorHistory];
+    updatedHistory[newPage - 1] = nextCursor;
+    setCursorHistory(updatedHistory);
+    setCurrentPage(newPage);
+    setLoadingPage(true);
     try {
-      const res = await venueOwnerApi.getMyBookingRequests(lastRequestId);
+      const res = await venueOwnerApi.getMyBookingRequests(undefined, nextCursor);
       if (res.success) {
-        setRequests((prev) => [...prev, ...(res.data || [])]);
-        setLastRequestId(res.pagination?.lastRequestId || null);
+        setRequests(res.data || []);
+        setNextCursor(res.pagination?.lastRequestId || null);
         setHasNext(res.pagination?.hasNext || false);
       }
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Failed to load more booking requests",
-      );
+      toast.error(err.response?.data?.message || "Failed to load next page");
     } finally {
-      setLoadingMore(false);
+      setLoadingPage(false);
+    }
+  };
+
+  const handlePrevPage = async () => {
+    if (currentPage <= 1 || loadingPage) return;
+    const prevPage = currentPage - 1;
+    const prevCursor = cursorHistory[prevPage - 1];
+    setCurrentPage(prevPage);
+    setLoadingPage(true);
+    try {
+      const res = await venueOwnerApi.getMyBookingRequests(undefined, prevCursor);
+      if (res.success) {
+        setRequests(res.data || []);
+        setNextCursor(res.pagination?.lastRequestId || null);
+        setHasNext(res.pagination?.hasNext || false);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load previous page");
+    } finally {
+      setLoadingPage(false);
     }
   };
 
@@ -125,7 +157,7 @@ export default function VenueBookingRequestsPage() {
 
           <button
             type="button"
-            onClick={fetchRequests}
+            onClick={() => fetchRequests()}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-muted transition cursor-pointer w-fit"
           >
@@ -165,21 +197,9 @@ export default function VenueBookingRequestsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3">
                 {requests.map((request) => {
-                  const slot =
-                    typeof request.slotId === "object" &&
-                    request.slotId !== null
-                      ? (request.slotId as any)
-                      : null;
-                  const subvenue =
-                    typeof request.subvenueId === "object" &&
-                    request.subvenueId !== null
-                      ? (request.subvenueId as any)
-                      : null;
-                  const userEmail =
-                    typeof request.userId === "object" &&
-                    request.userId !== null
-                      ? (request.userId as any).email
-                      : "Player";
+                  const slot = request.slotId;
+                  const subvenue = request.subvenueId;
+                  const applicantName = formatUserName(request.userId, "Player");
 
                   return (
                     <div
@@ -189,7 +209,7 @@ export default function VenueBookingRequestsPage() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-foreground">
-                            {userEmail}
+                            {applicantName}
                           </span>
                           {subvenue ? (
                             <span className="text-xs text-muted-foreground">
@@ -232,18 +252,13 @@ export default function VenueBookingRequestsPage() {
                 })}
               </div>
 
-              {hasNext && (
-                <div className="text-center pt-3">
-                  <button
-                    type="button"
-                    disabled={loadingMore}
-                    onClick={handleLoadMore}
-                    className="px-5 py-2 rounded-full border border-border text-xs font-semibold hover:bg-muted transition cursor-pointer"
-                  >
-                    {loadingMore ? "Loading..." : "Load More Bookings"}
-                  </button>
-                </div>
-              )}
+              <PageButtons
+                currentPage={currentPage}
+                hasNext={hasNext}
+                loading={loadingPage}
+                onPrevious={handlePrevPage}
+                onNext={handleNextPage}
+              />
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { Calendar, Clock, CheckCircle2, XCircle, Loader2, User } from "lucide-react";
-import type { SessionRequestItem, CoachSlotData } from "../api/coach.api";
-import { formatTimeEpoch } from "./CoachSlotCard";
+import type { SessionRequestItem } from "../api/coach.api";
+import { formatTimeEpoch } from "../../../utils/formatTime";
+import { formatUserName } from "../../../utils/formatUserName";
 
 interface SessionRequestCardProps {
   request: SessionRequestItem;
@@ -17,17 +18,10 @@ export default function SessionRequestCard({
   onApprove,
   onReject,
 }: SessionRequestCardProps) {
-  const slot = typeof request.slotId === "object" && request.slotId !== null
-    ? (request.slotId as CoachSlotData)
-    : null;
+  const slot = request.slotId;
 
-  const userEmail = typeof request.userId === "object" && request.userId !== null
-    ? (request.userId as { email: string }).email
-    : "Player";
-
-  const coachEmail = typeof request.coachId === "object" && request.coachId !== null
-    ? (request.coachId as { email: string }).email
-    : "Coach";
+  const applicantName = formatUserName(request.userId, "Player");
+  const coachName = formatUserName(request.coachId, "Coach");
 
   const getStatusBadge = () => {
     if (request.status === "approved") {
@@ -68,7 +62,7 @@ export default function SessionRequestCard({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
             <User size={14} className="text-muted-foreground" />
-            <span>{isCoachView ? `Applicant: ${userEmail}` : `Coach: ${coachEmail}`}</span>
+            <span>{isCoachView ? `Applicant: ${applicantName}` : `Coach: ${coachName}`}</span>
           </div>
           {getStatusBadge()}
         </div>

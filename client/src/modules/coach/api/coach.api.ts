@@ -1,11 +1,14 @@
 import api from "../../../utils/api";
 import { cleanObject } from "../../../utils/cleanObject";
 
+const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "http://localhost:5000";
+
 export interface CoachingCenter {
   name: string;
   address: string;
   city: string;
   state: string;
+  country: string;
 }
 
 export interface CoachProfileData {
@@ -71,9 +74,9 @@ export interface CoachSlotPagination {
 
 export interface SessionRequestItem {
   _id: string;
-  userId: string | { _id: string; email: string };
-  coachId: string | { _id: string; email: string };
-  slotId: string | CoachSlotData;
+  userId: { _id: string; firstName: string; lastName: string };
+  coachId: { _id: string; firstName: string; lastName: string };
+  slotId: CoachSlotData;
   status: "pending" | "approved" | "rejected" | "cancelled";
   createdAt: string;
   updatedAt: string;
@@ -193,6 +196,99 @@ export const coachApi = {
     }>(`/v1/coaches/${coachId}/slots?${params.toString()}`);
 
     return response.data;
+  },
+
+  subscribeToPublicSlots: (
+    coachId: string,
+    date: string,
+    setSlots: (getNextSlots: (current: CoachSlotData[]) => CoachSlotData[]) => void,
+  ) => {
+    const params = new URLSearchParams({ date });
+    const eventSource = new EventSource(
+      `${CLIENT_URL}/v1/coaches/${coachId}/slots/events?${params.toString()}`,
+      { withCredentials: true },
+    );
+
+    const onState = (event: Event) => {
+      try {
+        const parsed = JSON.parse((event as MessageEvent).data) as {
+          slots: CoachSlotData[];
+        };
+        const incomingSlots = parsed.slots || [];
+
+        setSlots((currentSlots) => {
+          const incomingMap = new Map(
+            incomingSlots.map((slot) => [slot._id, slot]),
+          );
+
+          return currentSlots
+            .filter((slot) => incomingMap.has(slot._id))
+            .map((slot) => incomingMap.get(slot._id) || slot);
+        });
+      } catch (error) {
+        console.error("Failed to parse slots_state event:", error);
+      }
+    };
+
+    const onCreated = (event: Event) => {
+      let parsed: { slot: CoachSlotData };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error("Failed to parse slot_created event:", error);
+        return;
+      }
+
+      const newSlot = parsed.slot;
+      if (!newSlot || newSlot.date !== date || newSlot.status !== "available") {
+        return;
+      }
+
+      setSlots((currentSlots) => {
+        const alreadyExists = currentSlots.some(
+          (slot) => slot._id === newSlot._id,
+        );
+        if (alreadyExists) {
+          return currentSlots;
+        }
+
+        const nextSlots = [...currentSlots, newSlot];
+        nextSlots.sort((a, b) => a.startEpoch - b.startEpoch);
+        return nextSlots;
+      });
+    };
+
+    const onRemoved = (event: Event, label: string) => {
+      let parsed: { slotId: string };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error(`Failed to parse ${label} event:`, error);
+        return;
+      }
+
+      setSlots((currentSlots) =>
+        currentSlots.filter((slot) => slot._id !== parsed.slotId),
+      );
+    };
+
+    eventSource.addEventListener("slots_state", onState);
+    eventSource.addEventListener("slot_created", onCreated);
+    eventSource.addEventListener("slot_available", onCreated);
+    eventSource.addEventListener("slot_booked", (event) =>
+      onRemoved(event, "slot_booked"),
+    );
+    eventSource.addEventListener("slot_cancelled", (event) =>
+      onRemoved(event, "slot_cancelled"),
+    );
+
+    eventSource.onerror = (error) => {
+      console.error("Coach slot SSE connection error:", error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   },
 
   // Session Request APIs

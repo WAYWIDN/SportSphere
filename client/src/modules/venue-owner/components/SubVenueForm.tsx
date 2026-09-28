@@ -8,6 +8,7 @@ import {
   type UpdateSubvenueInput,
 } from "../api/venueOwner.api";
 import { uploadFile } from "../../../service/cloudinary";
+import { SPORTS } from "../../../constants/sportOptions";
 
 interface SubVenueFormProps {
   venueId: string;
@@ -227,14 +228,19 @@ export default function SubVenueForm({
 
           <div className="space-y-1.5">
             <label className={labelClasses}>Sport</label>
-            <input
-              type="text"
+            <select
               value={sport}
               onChange={(e) => setSport(e.target.value)}
-              placeholder="e.g. Badminton, Football, Basketball"
               required
               className={inputClasses}
-            />
+            >
+              <option value="">Select sport</option>
+              {SPORTS.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

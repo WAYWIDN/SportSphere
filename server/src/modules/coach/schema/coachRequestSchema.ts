@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { MINIMUM_SLOT_DURATION_MS } from '../../../utils/timeConstants';
+import { SPORTS } from '../../../constants/placeOptions';
+import { MINIMUM_SLOT_DURATION_MS } from '../../../constants/timeConstants';
 
 const dateSchema = z
   .string()
@@ -17,12 +18,13 @@ const coachingCenterSchema = z.object({
   address: z.string().min(1),
   city: z.string().min(1),
   state: z.string().min(1),
+  country: z.string().min(1),
 });
 
 export const coachProfileRequestSchema = z.object({
   bio: z.string().min(1),
   experience: z.number().int().min(0),
-  sports: z.array(z.string().min(1)).min(1),
+  sports: z.array(z.enum(SPORTS)).min(1),
   photos: z.array(z.url()).optional(),
   coachingCenter: coachingCenterSchema,
 });

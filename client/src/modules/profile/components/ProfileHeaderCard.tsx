@@ -62,9 +62,12 @@ export default function ProfileHeaderCard({
   onUploadClick,
 }: ProfileHeaderCardProps) {
   const roleBadge = getRoleBadge(role);
-  const avatarLetter = firstName
-    ? firstName[0]?.toUpperCase()
-    : email?.[0]?.toUpperCase() || "U";
+  let avatarLetter = "U";
+  if (firstName) {
+    avatarLetter = firstName[0].toUpperCase();
+  } else if (email) {
+    avatarLetter = email[0].toUpperCase();
+  }
 
   return (
     <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border">

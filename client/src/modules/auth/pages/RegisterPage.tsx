@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowRight, Mail, Lock, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { ArrowRight, Mail, Lock, KeyRound, Eye, EyeOff, ArrowLeft, User } from "lucide-react";
 import { toast } from "react-toastify";
 import { authApi } from "../api/auth.api";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -46,7 +48,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await authApi.register({ email, password });
+      await authApi.register({ email, firstName, lastName, password });
       toast.success("Account created successfully!");
       navigate("/login");
     } catch (err: any) {
@@ -78,7 +80,7 @@ export default function RegisterPage() {
           <p className="text-sm text-black/60">
             {step === "send-otp" && "Join the Sportsphere community"}
             {step === "verify-otp" && `Enter the 6-digit OTP sent to ${email}`}
-            {step === "register" && "Set a secure password for your account"}
+            {step === "register" && "Add your name and set a password"}
           </p>
         </div>
 
@@ -143,6 +145,40 @@ export default function RegisterPage() {
 
         {step === "register" && (
           <form onSubmit={handleRegister} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-black/80">First name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/15 bg-[#f5f4f1]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 transition"
+                  placeholder="First name"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-black/80">Last name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black/40">
+                  <User size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/15 bg-[#f5f4f1]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 transition"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2 text-black/80">Password</label>
               <div className="relative">

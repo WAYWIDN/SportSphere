@@ -1,6 +1,8 @@
 import { Building, Loader2, CheckCircle2, ImagePlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PlaceSelects from "../../../components/ui/PlaceSelects";
+import SportChoices from "../../../components/ui/SportChoices";
 import { coachApi, type CoachProfileData } from "../api/coach.api";
 import { useAuth } from "../../../context/AuthContext";
 import { uploadFile } from "../../../service/cloudinary";
@@ -14,12 +16,13 @@ export default function CoachProfileForm() {
 
   const [bio, setBio] = useState("");
   const [experience, setExperience] = useState<number | "">("");
-  const [sportsInput, setSportsInput] = useState("");
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
 
   const [centerName, setCenterName] = useState("");
   const [centerAddress, setCenterAddress] = useState("");
   const [centerCity, setCenterCity] = useState("");
   const [centerState, setCenterState] = useState("");
+  const [centerCountry, setCenterCountry] = useState("");
 
   // New training center images
   const [profileImages, setProfileImages] = useState<File[]>([]);
@@ -47,11 +50,12 @@ export default function CoachProfileForm() {
         setProfile(res.data);
         setBio(res.data.bio || "");
         setExperience(res.data.experience ?? "");
-        setSportsInput(res.data.sports ? res.data.sports.join(", ") : "");
+        setSelectedSports(res.data.sports || []);
         setCenterName(res.data.coachingCenter?.name || "");
         setCenterAddress(res.data.coachingCenter?.address || "");
         setCenterCity(res.data.coachingCenter?.city || "");
         setCenterState(res.data.coachingCenter?.state || "");
+        setCenterCountry(res.data.coachingCenter?.country || "");
       }
     } catch {
       setProfile(null);
@@ -105,18 +109,18 @@ export default function CoachProfileForm() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const sportsList = sportsInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (sportsList.length === 0) {
-      toast.error("Please enter at least one sport");
+    if (selectedSports.length === 0) {
+      toast.error("Please choose at least one sport");
       return;
     }
 
     if (experience === "") {
       toast.error("Please enter years of experience");
+      return;
+    }
+
+    if (!centerCountry || !centerState || !centerCity) {
+      toast.error("Choose a country, state, and city from the list");
       return;
     }
 
@@ -153,13 +157,14 @@ export default function CoachProfileForm() {
       const payload = {
         bio,
         experience: Number(experience),
-        sports: sportsList,
+        sports: selectedSports,
 
         coachingCenter: {
           name: centerName,
           address: centerAddress,
           city: centerCity,
           state: centerState,
+          country: centerCountry,
         },
 
         photos: allImages,
@@ -224,18 +229,11 @@ export default function CoachProfileForm() {
       ) : (
         <form onSubmit={handleSaveProfile} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelClasses}>
-                Sports Coached (Comma-separated)
-              </label>
-
-              <input
-                type="text"
-                value={sportsInput}
-                onChange={(e) => setSportsInput(e.target.value)}
-                placeholder="Football, Tennis, Basketball"
-                required
-                className={inputClasses}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className={labelClasses}>Sports Coached</label>
+              <SportChoices
+                selected={selectedSports}
+                onChange={setSelectedSports}
               />
             </div>
 
@@ -408,31 +406,18 @@ export default function CoachProfileForm() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className={labelClasses}>City</label>
-
-                <input
-                  type="text"
-                  value={centerCity}
-                  onChange={(e) => setCenterCity(e.target.value)}
-                  placeholder="New York"
-                  required
-                  className={inputClasses}
+              {!loadingProfile && (
+                <PlaceSelects
+                  country={centerCountry}
+                  stateName={centerState}
+                  city={centerCity}
+                  onCountry={setCenterCountry}
+                  onState={setCenterState}
+                  onCity={setCenterCity}
+                  inputClassName={inputClasses}
+                  labelClassName={labelClasses}
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className={labelClasses}>State</label>
-
-                <input
-                  type="text"
-                  value={centerState}
-                  onChange={(e) => setCenterState(e.target.value)}
-                  placeholder="NY"
-                  required
-                  className={inputClasses}
-                />
-              </div>
+              )}
             </div>
           </div>
 

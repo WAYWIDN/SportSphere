@@ -5,7 +5,10 @@ import { queueBookingNotification } from '../../booking/utils/bookingNotificatio
 import { CoachSlot } from '../model/coachSlotModel';
 import { SessionRequest } from '../model/sessionRequestModel';
 import { sendSlotEvent } from '../utils/slotEventUtils';
-
+import {
+  loadPublicUsers,
+  toPublicUser,
+} from '../../profile-management/utils/userNameUtils';
 const PAGE_SIZE = 10;
 
 const getPage = <T extends { _id: Types.ObjectId }>(items: T[]) => {
@@ -17,6 +20,22 @@ const getPage = <T extends { _id: Types.ObjectId }>(items: T[]) => {
     hasNext,
     lastId: hasNext ? data[data.length - 1]._id : null,
   };
+};
+
+const attachRequestNames = async <
+  T extends { userId: { toString(): string }; coachId: { toString(): string } },
+>(
+  requests: T[],
+) => {
+  const users = await loadPublicUsers(
+    requests.flatMap((request) => [request.userId, request.coachId]),
+  );
+
+  return requests.map((request) => ({
+    ...request,
+    userId: toPublicUser(request.userId, users),
+    coachId: toPublicUser(request.coachId, users),
+  }));
 };
 
 export const createSessionRequestController = async (
@@ -87,14 +106,14 @@ export const getUserSessionRequestsController = async (
     )
       .sort({ _id: -1 })
       .limit(11)
-      .populate('coachId', 'email')
       .populate('slotId')
       .lean();
     const page = getPage(requests);
+    const data = await attachRequestNames(page.data);
 
     return res.status(200).json({
       success: true,
-      data: page.data,
+      data,
       pagination: {
         limit: PAGE_SIZE,
         lastRequestId: page.lastId,
@@ -133,14 +152,14 @@ export const getCoachSessionRequestsController = async (
     const requests = await SessionRequest.find(filter)
       .sort({ _id: -1 })
       .limit(11)
-      .populate('userId', 'email')
       .populate('slotId')
       .lean();
     const page = getPage(requests);
+    const data = await attachRequestNames(page.data);
 
     return res.status(200).json({
       success: true,
-      data: page.data,
+      data,
       pagination: {
         limit: PAGE_SIZE,
         lastRequestId: page.lastId,

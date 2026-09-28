@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   User as UserIcon,
-  Mail,
   Phone,
   MapPin,
   Shield,
@@ -117,6 +116,7 @@ export default function UserProfileViewPage() {
   }
 
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "User Profile";
+  const nameInitial = profile.firstName ? profile.firstName[0].toUpperCase() : "U";
   const roleBadge = getRoleBadge(profile.role);
 
   return (
@@ -147,7 +147,7 @@ export default function UserProfileViewPage() {
                 />
               ) : (
                 <div className="text-3xl font-semibold text-foreground/40">
-                  {profile.firstName ? profile.firstName[0]?.toUpperCase() : profile.email?.[0]?.toUpperCase() || "U"}
+                  {nameInitial}
                 </div>
               )}
             </div>
@@ -163,13 +163,6 @@ export default function UserProfileViewPage() {
                   {roleBadge.label}
                 </span>
               </div>
-
-              {profile.email ? (
-                <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-1.5">
-                  <Mail size={15} />
-                  {profile.email}
-                </p>
-              ) : null}
 
               {(profile.city || profile.state) ? (
                 <p className="text-xs text-muted-foreground/80 flex items-center justify-center sm:justify-start gap-1">

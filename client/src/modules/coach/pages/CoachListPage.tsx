@@ -7,6 +7,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import PageButtons from "../../../components/ui/PageButtons";
 import { toast } from "react-toastify";
 import {
   coachApi,
@@ -14,12 +15,15 @@ import {
   type CoachSearchFilters,
 } from "../api/coach.api";
 import CoachCard from "../cards/CoachCard";
+import { SPORTS } from "../../../constants/sportOptions";
 
 export default function CoachListPage() {
   const [coaches, setCoaches] = useState<CoachProfileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [lastCoachId, setLastCoachId] = useState<string | null>(null);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([undefined]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
 
   // Search filter states
@@ -34,21 +38,21 @@ export default function CoachListPage() {
     fetchCoaches();
   }, []);
 
+  const getFilters = (): CoachSearchFilters => ({
+    sport: sport.trim() ? sport.trim() : undefined,
+    city: city.trim() ? city.trim() : undefined,
+    minExperience: minExperience === "" ? undefined : Number(minExperience),
+  });
+
   const fetchCoaches = async () => {
     setLoading(true);
-
+    setCurrentPage(1);
+    setCursorHistory([undefined]);
     try {
-      const filters: CoachSearchFilters = {
-        sport: sport.trim() ? sport.trim() : undefined,
-        city: city.trim() ? city.trim() : undefined,
-        minExperience: minExperience === "" ? undefined : Number(minExperience),
-      };
-
-      const res = await coachApi.searchProfiles(filters);
-
+      const res = await coachApi.searchProfiles(getFilters());
       if (res.success) {
         setCoaches(res.data);
-        setLastCoachId(res.pagination.lastCoachId);
+        setNextCursor(res.pagination.lastCoachId || null);
         setHasNext(res.pagination.hasNext);
       }
     } catch (err: any) {
@@ -67,15 +71,14 @@ export default function CoachListPage() {
     setSport("");
     setCity("");
     setMinExperience("");
-
     setLoading(true);
-
+    setCurrentPage(1);
+    setCursorHistory([undefined]);
     try {
       const res = await coachApi.searchProfiles({});
-
       if (res.success) {
         setCoaches(res.data);
-        setLastCoachId(res.pagination.lastCoachId);
+        setNextCursor(res.pagination.lastCoachId || null);
         setHasNext(res.pagination.hasNext);
       }
     } catch (err: any) {
@@ -85,30 +88,45 @@ export default function CoachListPage() {
     }
   };
 
-  const handleLoadMore = async () => {
-    if (!lastCoachId || loadingMore) return;
-
-    setLoadingMore(true);
-
+  const handleNextPage = async () => {
+    if (!hasNext || !nextCursor || loadingPage) return;
+    const newPage = currentPage + 1;
+    const updatedHistory = [...cursorHistory];
+    updatedHistory[newPage - 1] = nextCursor;
+    setCursorHistory(updatedHistory);
+    setCurrentPage(newPage);
+    setLoadingPage(true);
     try {
-      const filters: CoachSearchFilters = {
-        sport: sport.trim() ? sport.trim() : undefined,
-        city: city.trim() ? city.trim() : undefined,
-        minExperience: minExperience === "" ? undefined : Number(minExperience),
-        lastCoachId,
-      };
-
-      const res = await coachApi.searchProfiles(filters);
-
+      const res = await coachApi.searchProfiles({ ...getFilters(), lastCoachId: nextCursor });
       if (res.success) {
-        setCoaches((prev) => [...prev, ...res.data]);
-        setLastCoachId(res.pagination.lastCoachId);
+        setCoaches(res.data);
+        setNextCursor(res.pagination.lastCoachId || null);
         setHasNext(res.pagination.hasNext);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load more coaches");
+      toast.error(err.response?.data?.message || "Failed to load next page");
     } finally {
-      setLoadingMore(false);
+      setLoadingPage(false);
+    }
+  };
+
+  const handlePrevPage = async () => {
+    if (currentPage <= 1 || loadingPage) return;
+    const prevPage = currentPage - 1;
+    const prevCursor = cursorHistory[prevPage - 1];
+    setCurrentPage(prevPage);
+    setLoadingPage(true);
+    try {
+      const res = await coachApi.searchProfiles({ ...getFilters(), lastCoachId: prevCursor });
+      if (res.success) {
+        setCoaches(res.data);
+        setNextCursor(res.pagination.lastCoachId || null);
+        setHasNext(res.pagination.hasNext);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load previous page");
+    } finally {
+      setLoadingPage(false);
     }
   };
 
@@ -147,13 +165,18 @@ export default function CoachListPage() {
                       Sport
                     </label>
 
-                    <input
-                      type="text"
+                    <select
                       value={sport}
                       onChange={(e) => setSport(e.target.value)}
-                      placeholder="e.g. Football, Tennis"
                       className="w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition"
-                    />
+                    >
+                      <option value="">Any sport</option>
+                      {SPORTS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* City */}
@@ -166,7 +189,7 @@ export default function CoachListPage() {
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Ahmedabad, Rajkot"
+                      placeholder="e.g. Mumbai"
                       className="w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition"
                     />
                   </div>
@@ -261,26 +284,13 @@ export default function CoachListPage() {
               ))}
             </div>
 
-            {/* Load More */}
-            {hasNext ? (
-              <div className="text-center pt-4">
-                <button
-                  type="button"
-                  disabled={loadingMore}
-                  onClick={handleLoadMore}
-                  className="px-6 py-3 rounded-full border border-border text-xs font-semibold bg-card hover:bg-muted transition cursor-pointer inline-flex items-center gap-2"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Loading more coaches...
-                    </>
-                  ) : (
-                    "Load More Coaches"
-                  )}
-                </button>
-              </div>
-            ) : null}
+            <PageButtons
+              currentPage={currentPage}
+              hasNext={hasNext}
+              loading={loadingPage}
+              onPrevious={handlePrevPage}
+              onNext={handleNextPage}
+            />
           </div>
         )}
       </div>

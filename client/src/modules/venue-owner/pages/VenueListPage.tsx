@@ -7,6 +7,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import PageButtons from "../../../components/ui/PageButtons";
 import { toast } from "react-toastify";
 import {
   venueOwnerApi,
@@ -14,41 +15,41 @@ import {
   type VenueSearchFilters,
 } from "../api/venueOwner.api";
 import VenueCard from "../cards/VenueCard";
+import { SPORTS } from "../../../constants/sportOptions";
 
 export default function VenueListPage() {
   const [venues, setVenues] = useState<VenueProfileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [lastVenueId, setLastVenueId] = useState<string | null>(null);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([undefined]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
 
-  // Search filter states
   const [name, setName] = useState("");
   const [sport, setSport] = useState("");
   const [city, setCity] = useState("");
-
-  // Filter dropdown state
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     fetchVenues();
   }, []);
 
+  const getFilters = (): VenueSearchFilters => ({
+    name: name.trim() ? name.trim() : undefined,
+    sport: sport.trim() ? sport.trim() : undefined,
+    city: city.trim() ? city.trim() : undefined,
+  });
+
   const fetchVenues = async () => {
     setLoading(true);
-
+    setCurrentPage(1);
+    setCursorHistory([undefined]);
     try {
-      const filters: VenueSearchFilters = {
-        name: name.trim() ? name.trim() : undefined,
-        sport: sport.trim() ? sport.trim() : undefined,
-        city: city.trim() ? city.trim() : undefined,
-      };
-
-      const res = await venueOwnerApi.searchVenues(filters);
-
+      const res = await venueOwnerApi.searchVenues(getFilters());
       if (res.success) {
         setVenues(res.data || []);
-        setLastVenueId(res.pagination?.lastVenueId || null);
+        setNextCursor(res.pagination?.lastVenueId || null);
         setHasNext(res.pagination?.hasNext || false);
       }
     } catch (err: any) {
@@ -67,15 +68,14 @@ export default function VenueListPage() {
     setName("");
     setSport("");
     setCity("");
-
     setLoading(true);
-
+    setCurrentPage(1);
+    setCursorHistory([undefined]);
     try {
       const res = await venueOwnerApi.searchVenues({});
-
       if (res.success) {
         setVenues(res.data || []);
-        setLastVenueId(res.pagination?.lastVenueId || null);
+        setNextCursor(res.pagination?.lastVenueId || null);
         setHasNext(res.pagination?.hasNext || false);
       }
     } catch (err: any) {
@@ -85,39 +85,53 @@ export default function VenueListPage() {
     }
   };
 
-  const handleLoadMore = async () => {
-    if (!lastVenueId || loadingMore) return;
-
-    setLoadingMore(true);
-
+  const handleNextPage = async () => {
+    if (!hasNext || !nextCursor || loadingPage) return;
+    const newPage = currentPage + 1;
+    const updatedHistory = [...cursorHistory];
+    updatedHistory[newPage - 1] = nextCursor;
+    setCursorHistory(updatedHistory);
+    setCurrentPage(newPage);
+    setLoadingPage(true);
     try {
-      const filters: VenueSearchFilters = {
-        name: name.trim() ? name.trim() : undefined,
-        sport: sport.trim() ? sport.trim() : undefined,
-        city: city.trim() ? city.trim() : undefined,
-        lastVenueId,
-      };
-
-      const res = await venueOwnerApi.searchVenues(filters);
-
+      const res = await venueOwnerApi.searchVenues({ ...getFilters(), lastVenueId: nextCursor });
       if (res.success) {
-        setVenues((prev) => [...prev, ...(res.data || [])]);
-        setLastVenueId(res.pagination?.lastVenueId || null);
+        setVenues(res.data || []);
+        setNextCursor(res.pagination?.lastVenueId || null);
         setHasNext(res.pagination?.hasNext || false);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load more venues");
+      toast.error(err.response?.data?.message || "Failed to load next page");
     } finally {
-      setLoadingMore(false);
+      setLoadingPage(false);
+    }
+  };
+
+  const handlePrevPage = async () => {
+    if (currentPage <= 1 || loadingPage) return;
+    const prevPage = currentPage - 1;
+    const prevCursor = cursorHistory[prevPage - 1];
+    setCurrentPage(prevPage);
+    setLoadingPage(true);
+    try {
+      const res = await venueOwnerApi.searchVenues({ ...getFilters(), lastVenueId: prevCursor });
+      if (res.success) {
+        setVenues(res.data || []);
+        setNextCursor(res.pagination?.lastVenueId || null);
+        setHasNext(res.pagination?.hasNext || false);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load previous page");
+    } finally {
+      setLoadingPage(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Search & Filter Bar matching CoachListPage */}
+        {/* Search & Filter Bar */}
         <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden">
-          {/* Filter Header */}
           <button
             type="button"
             onClick={() => setFiltersOpen((prev) => !prev)}
@@ -127,21 +141,16 @@ export default function VenueListPage() {
               <Filter size={16} />
               <span className="text-sm font-semibold">Search & Filters</span>
             </div>
-
             <ChevronDown
               size={18}
-              className={`transition-transform duration-200 ${
-                filtersOpen ? "rotate-180" : ""
-              }`}
+              className={`transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`}
             />
           </button>
 
-          {/* Filters */}
           {filtersOpen && (
             <div className="px-6 pb-6">
               <form onSubmit={handleSearchSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Venue Name */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Venue Name
@@ -155,21 +164,24 @@ export default function VenueListPage() {
                     />
                   </div>
 
-                  {/* Sport */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Sport
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={sport}
                       onChange={(e) => setSport(e.target.value)}
-                      placeholder="e.g. Football, Badminton"
                       className="w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition"
-                    />
+                    >
+                      <option value="">Any sport</option>
+                      {SPORTS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* City */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       City
@@ -178,13 +190,12 @@ export default function VenueListPage() {
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Mumbai, New York"
+                      placeholder="e.g. Mumbai"
                       className="w-full px-4 py-2.5 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-xs transition"
                     />
                   </div>
                 </div>
 
-                {/* Filter Actions */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
@@ -212,26 +223,18 @@ export default function VenueListPage() {
         {/* Venues Grid */}
         {loading ? (
           <div className="bg-card rounded-[2.5rem] p-12 text-center border border-border shadow-xl shadow-black/5">
-            <Loader2
-              className="animate-spin text-primary mx-auto mb-3"
-              size={32}
-            />
-            <p className="text-sm text-muted-foreground">
-              Discovering venues...
-            </p>
+            <Loader2 className="animate-spin text-primary mx-auto mb-3" size={32} />
+            <p className="text-sm text-muted-foreground">Discovering venues...</p>
           </div>
         ) : venues.length === 0 ? (
           <div className="bg-card rounded-[2.5rem] p-12 text-center border border-border shadow-xl shadow-black/5 space-y-3">
             <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center text-muted-foreground">
               <Filter size={24} />
             </div>
-
             <h3 className="text-lg font-bold">No Venues Found</h3>
-
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
               We couldn't find any venues matching your search criteria. Try modifying your filters.
             </p>
-
             <button
               type="button"
               onClick={handleResetFilters}
@@ -249,25 +252,13 @@ export default function VenueListPage() {
               ))}
             </div>
 
-            {hasNext && (
-              <div className="text-center pt-4">
-                <button
-                  type="button"
-                  disabled={loadingMore}
-                  onClick={handleLoadMore}
-                  className="px-6 py-3 rounded-full border border-border text-xs font-semibold bg-card hover:bg-muted transition cursor-pointer inline-flex items-center gap-2"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Loading more venues...
-                    </>
-                  ) : (
-                    "Load More Venues"
-                  )}
-                </button>
-              </div>
-            )}
+            <PageButtons
+              currentPage={currentPage}
+              hasNext={hasNext}
+              loading={loadingPage}
+              onPrevious={handlePrevPage}
+              onNext={handleNextPage}
+            />
           </div>
         )}
       </div>

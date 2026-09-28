@@ -28,6 +28,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.3.8",
     "cloudinary": "^2.11.0",

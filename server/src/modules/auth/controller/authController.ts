@@ -105,6 +105,8 @@ export const verifyOTPController = async (req: Request, res: Response) => {
 export const registerUserController = async (req: Request, res: Response) => {
   const email: string = req.body.email;
   const password: string = req.body.password;
+  const firstName: string = req.body.firstName;
+  const lastName: string = req.body.lastName;
 
   try {
     const redisKey = `register:${email}`;
@@ -115,14 +117,16 @@ export const registerUserController = async (req: Request, res: Response) => {
         .json({ success: false, message: 'OTP not verified' });
     } else {
       const hashedPassword = await hashPassword(password);
-      // default role is player and verified is false
       const newUser = new User({ email: email, password: hashedPassword });
+      await newUser.save();
+
       const newUserProfile = new UserProfile({
         userId: newUser._id,
         email: email,
+        firstName: firstName,
+        lastName: lastName,
       });
       await newUserProfile.save();
-      await newUser.save();
       await redisClient.del(redisKey);
       return res
         .status(201)

@@ -38,38 +38,34 @@ export const getUserProfileByIdController = async (
   }
 
   try {
-    if (userId) {
-      const userRole = await User.findOne({ _id: userId }).select('role');
-      if (!userRole) {
-        return res
-          .status(404)
-          .json({ success: false, message: 'User not found' });
-      }
-
-      // Admins can view the full profile for an application review.
-      if (userRole.role !== 'player' || req.userMetadata?.role === 'admin') {
-        const userProfile = await UserProfile.findOne({
-          userId: userId,
-        });
-        if (!userProfile) {
-          return res
-            .status(404)
-            .json({ success: false, message: 'User profile not found' });
-        }
-        return res.status(200).json({ success: true, data: userProfile });
-      } else {
-        const userProfile = await UserProfile.findOne({
-          userId: userId,
-        }).select('userId firstName lastName profilePictureUrl gender');
-        if (!userProfile) {
-          return res
-            .status(404)
-            .json({ success: false, message: 'User profile not found' });
-        }
-
-        return res.status(200).json({ success: true, data: userProfile });
-      }
+    const userRole = await User.findOne({ _id: userId }).select('role');
+    if (!userRole) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found' });
     }
+
+    const profileQuery = UserProfile.findOne({ userId });
+    const isPublicPlayer =
+      userRole.role === 'player' && req.userMetadata?.role !== 'admin';
+
+    if (isPublicPlayer) {
+      profileQuery.select('userId firstName lastName profilePictureUrl gender');
+    }
+
+    const userProfile = await profileQuery;
+    if (!userProfile) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User profile not found' });
+    }
+
+    const profileData: Record<string, unknown> = {
+      ...userProfile.toObject(),
+    };
+    delete profileData.email;
+
+    return res.status(200).json({ success: true, data: profileData });
   } catch (error) {
     console.error('Error retrieving user profile by ID:', error);
     return res.status(500).json({

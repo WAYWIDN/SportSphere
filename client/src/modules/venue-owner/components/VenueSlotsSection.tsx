@@ -115,76 +115,11 @@ export default function VenueSlotsSection() {
       if (cancelled) return;
 
       try {
-        const eventSource = venueOwnerApi.getSlotsStream(
+        return venueOwnerApi.subscribeToSlots(
           selectedSubvenueId,
           selectedDate,
+          setSlots,
         );
-
-        eventSource.addEventListener("slots_state", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slots: VenueSlotData[];
-            };
-            if (parsed.slots) {
-              setSlots(parsed.slots);
-            }
-          } catch (error) {
-            console.error("Failed to parse slots_state event:", error);
-          }
-        });
-
-        eventSource.addEventListener("slot_created", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slot: VenueSlotData;
-            };
-            const newSlot = parsed.slot;
-            if (newSlot && newSlot.date === selectedDate) {
-              setSlots((current) => {
-                if (current.some((s) => s._id === newSlot._id)) {
-                  return current;
-                }
-                return [...current, newSlot].sort(
-                  (a, b) => a.startEpoch - b.startEpoch,
-                );
-              });
-            }
-          } catch (error) {
-            console.error("Failed to parse slot_created event:", error);
-          }
-        });
-
-        eventSource.addEventListener("slot_booked", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slotId: string;
-            };
-            setSlots((current) =>
-              current.map((s) =>
-                s._id === parsed.slotId ? { ...s, status: "booked" } : s,
-              ),
-            );
-          } catch (error) {
-            console.error("Failed to parse slot_booked event:", error);
-          }
-        });
-
-        eventSource.addEventListener("slot_cancelled", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slotId: string;
-            };
-            setSlots((current) =>
-              current.filter((s) => s._id !== parsed.slotId),
-            );
-          } catch (error) {
-            console.error("Failed to parse slot_cancelled event:", error);
-          }
-        });
-
-        return () => {
-          eventSource.close();
-        };
       } catch (e) {
         console.error("SSE connection error:", e);
       }

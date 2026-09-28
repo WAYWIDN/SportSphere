@@ -9,11 +9,37 @@ import {
   Shield,
   Briefcase,
   Building,
+  Users,
+  Calendar,
+  LayoutDashboard,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../modules/auth/api/auth.api";
 import { toast } from "react-toastify";
+
+const ROLE_BADGES = {
+  coach: { label: "Coach", icon: <Briefcase size={12} /> },
+  "venue-owner": { label: "Venue Owner", icon: <Building size={12} /> },
+  admin: { label: "Admin", icon: <Shield size={12} /> },
+  player: { label: "Player", icon: <UserIcon size={12} /> },
+};
+
+const ROLE_MENU_ITEMS: Record<string, { label: string; path: string; icon: React.ReactNode }[]> = {
+  admin: [{ label: "Admin Portal", path: "/admin", icon: <Shield size={16} /> }],
+  coach: [{ label: "Coach Dashboard", path: "/coach/dashboard", icon: <LayoutDashboard size={16} /> }],
+  "venue-owner": [{ label: "Venue Owner Portal", path: "/venue-owner", icon: <Building size={16} /> }],
+  player: [
+    { label: "My Sessions", path: "/sessions", icon: <Briefcase size={16} /> },
+    { label: "My Games", path: "/my-games", icon: <Users size={16} /> },
+    { label: "My Bookings", path: "/my-bookings", icon: <Calendar size={16} /> },
+  ],
+};
+
+const COMMON_MENU_ITEMS = [
+  { label: "My Profile", path: "/profile", icon: <UserIcon size={16} /> },
+  { label: "Reset Password", path: "/reset-password", icon: <KeyRound size={16} /> },
+];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,6 +50,10 @@ export default function Navbar() {
   const location = useLocation();
   const { user, setUser } = useAuth();
 
+  const roleBadge = ROLE_BADGES[user?.role as keyof typeof ROLE_BADGES] ?? ROLE_BADGES.player;
+  const roleItems = ROLE_MENU_ITEMS[user?.role ?? ""] ?? [];
+  const menuItems = [...roleItems, ...COMMON_MENU_ITEMS];
+
   const handleNavigate = (path: string) => {
     setMenuOpen(false);
     setProfileDropdownOpen(false);
@@ -33,120 +63,30 @@ export default function Navbar() {
   const handleLogout = async () => {
     setMenuOpen(false);
     setProfileDropdownOpen(false);
-
     try {
       await authApi.logout();
-      setUser(null);
-      toast.success("Logged out successfully");
-      navigate("/login");
-    } catch (err: any) {
-      setUser(null);
-      navigate("/login");
+    } catch {
+      // ignore
     }
+    setUser(null);
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
-  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close menus on route change
   useEffect(() => {
     setMenuOpen(false);
     setProfileDropdownOpen(false);
   }, [location.pathname]);
-
-  const getRoleBadge = (roleName?: string) => {
-    switch (roleName) {
-      case "coach":
-        return {
-          label: "Coach",
-          color: "bg-muted text-foreground border-border",
-          icon: <Briefcase size={12} />,
-        };
-
-      case "venue-owner":
-        return {
-          label: "Venue Owner",
-          color: "bg-muted text-foreground border-border",
-          icon: <Building size={12} />,
-        };
-
-      case "admin":
-        return {
-          label: "Admin",
-          color: "bg-muted text-foreground border-border",
-          icon: <Shield size={12} />,
-        };
-
-      default:
-        return {
-          label: "Player",
-          color: "bg-muted text-foreground border-border",
-          icon: <UserIcon size={12} />,
-        };
-    }
-  };
-
-  const roleBadge = getRoleBadge(user?.role);
-
-  const profileMenuItems = [
-    {
-      label: "My Profile",
-      path: "/profile",
-      icon: <UserIcon size={16} />,
-    },
-    {
-      label: "Reset Password",
-      path: "/reset-password",
-      icon: <KeyRound size={16} />,
-    },
-  ];
-
-  if (user?.role === "admin") {
-    profileMenuItems.unshift({
-      label: "Admin Portal",
-      path: "/admin",
-      icon: <Shield size={16} />,
-    });
-  }
-
-  if (user?.role === "coach") {
-    profileMenuItems.unshift({
-      label: "Coach Dashboard",
-      path: "/coach/dashboard",
-      icon: <Briefcase size={16} />,
-    });
-  }
-
-  if (user?.role === "player") {
-    profileMenuItems.splice(1, 0, {
-      label: "My Sessions",
-      path: "/my-sessions",
-      icon: <Briefcase size={16} />,
-    });
-  }
-
-  if (user?.role === "venue-owner") {
-    profileMenuItems.unshift({
-      label: "Venue Owner Portal",
-      path: "/venue-owner",
-      icon: <Building size={16} />,
-    });
-  }
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
@@ -163,7 +103,6 @@ export default function Navbar() {
             alt="Sportsphere"
             className="h-8 w-8 object-contain mix-blend-multiply"
           />
-
           <span className="text-lg font-semibold tracking-[-0.04em] text-foreground">
             sportsphere
           </span>
@@ -178,7 +117,6 @@ export default function Navbar() {
           >
             Venues
           </button>
-
           <button
             type="button"
             onClick={() => handleNavigate("/coaches")}
@@ -186,7 +124,6 @@ export default function Navbar() {
           >
             Coaches
           </button>
-
           <button
             type="button"
             onClick={() => handleNavigate("/games")}
@@ -208,37 +145,27 @@ export default function Navbar() {
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                   <UserIcon size={14} />
                 </div>
-
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${roleBadge.color}`}
-                >
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-muted text-foreground border-border">
                   {roleBadge.icon}
                   {roleBadge.label}
                 </span>
-
                 <ChevronDown
                   size={14}
-                  className={`text-muted-foreground transition-transform duration-200 ${
-                    profileDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`text-muted-foreground transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
-              {/* Profile Dropdown Menu */}
               {profileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-3xl border border-border bg-card p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3 py-2 border-b border-border mb-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Signed in as
-                    </p>
-
+                    <p className="text-xs font-medium text-muted-foreground">Signed in as</p>
                     <p className="text-sm font-semibold text-foreground capitalize truncate">
                       {user.role || "User"}
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-0.5 text-sm">
-                    {profileMenuItems.map((item) => (
+                    {menuItems.map((item) => (
                       <button
                         key={item.path}
                         type="button"
@@ -273,7 +200,6 @@ export default function Navbar() {
               >
                 Sign in
               </button>
-
               <button
                 type="button"
                 onClick={() => handleNavigate("/register")}
@@ -308,7 +234,6 @@ export default function Navbar() {
             >
               Find a game
             </button>
-
             <button
               type="button"
               onClick={() => handleNavigate("/venues")}
@@ -316,7 +241,6 @@ export default function Navbar() {
             >
               Explore venues
             </button>
-
             <button
               type="button"
               onClick={() => handleNavigate("/coaches")}
@@ -331,16 +255,13 @@ export default function Navbar() {
               <div className="flex flex-col gap-2 pt-1">
                 <div className="flex items-center justify-between py-1">
                   <span className="text-xs text-muted-foreground">Account</span>
-
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleBadge.color}`}
-                  >
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-muted text-foreground border-border">
                     {roleBadge.icon}
                     {roleBadge.label}
                   </span>
                 </div>
 
-                {profileMenuItems.map((item) => (
+                {menuItems.map((item) => (
                   <button
                     key={item.path}
                     type="button"
@@ -370,7 +291,6 @@ export default function Navbar() {
                 >
                   Sign in
                 </button>
-
                 <button
                   type="button"
                   onClick={() => handleNavigate("/register")}

@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PlaceSelects from "../../../components/ui/PlaceSelects";
+import SportChoices from "../../../components/ui/SportChoices";
 import { venueOwnerApi, type VenueProfileData } from "../api/venueOwner.api";
 import { useAuth } from "../../../context/AuthContext";
 import { uploadFile } from "../../../service/cloudinary";
@@ -27,7 +29,7 @@ export default function VenueProfileForm({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [sportsInput, setSportsInput] = useState("");
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [facilitiesInput, setFacilitiesInput] = useState("");
 
   const [centerAddress, setCenterAddress] = useState("");
@@ -64,7 +66,7 @@ export default function VenueProfileForm({
         setVenue(v);
         setName(v.name || "");
         setDescription(v.description || "");
-        setSportsInput(v.sports ? v.sports.join(", ") : "");
+        setSelectedSports(v.sports || []);
         setFacilitiesInput(v.facilities ? v.facilities.join(", ") : "");
         setCenterAddress(v.location?.address || "");
         setCenterCity(v.location?.city || "");
@@ -134,13 +136,8 @@ export default function VenueProfileForm({
   const handleSaveVenue = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const sportsList = sportsInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (sportsList.length === 0) {
-      toast.error("Please enter at least one sport");
+    if (selectedSports.length === 0) {
+      toast.error("Please choose at least one sport");
       return;
     }
 
@@ -149,13 +146,15 @@ export default function VenueProfileForm({
       .map((f) => f.trim())
       .filter(Boolean);
 
+    if (!centerCountry.trim() || !centerState.trim() || !centerCity.trim()) {
+      toast.error("Choose a country, state, and city from the list");
+      return;
+    }
+
     if (
       !name.trim() ||
       !description.trim() ||
       !centerAddress.trim() ||
-      !centerCity.trim() ||
-      !centerState.trim() ||
-      !centerCountry.trim() ||
       !centerPincode.trim()
     ) {
       toast.error("Please fill in all required fields");
@@ -195,7 +194,7 @@ export default function VenueProfileForm({
       const payload = {
         name: name.trim(),
         description: description.trim(),
-        sports: sportsList,
+        sports: selectedSports,
         facilities: facilitiesList,
         images: allImages,
         location: {
@@ -313,16 +312,11 @@ export default function VenueProfileForm({
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className={labelClasses}>Sports (comma-separated)</label>
-
-              <input
-                type="text"
-                value={sportsInput}
-                onChange={(e) => setSportsInput(e.target.value)}
-                placeholder="Badminton, Tennis, Football"
-                required
-                className={inputClasses}
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className={labelClasses}>Sports</label>
+              <SportChoices
+                selected={selectedSports}
+                onChange={setSelectedSports}
               />
             </div>
 
@@ -464,47 +458,18 @@ export default function VenueProfileForm({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className={labelClasses}>City</label>
-
-              <input
-                type="text"
-                value={centerCity}
-                onChange={(e) => setCenterCity(e.target.value)}
-                placeholder="Mumbai"
-                maxLength={100}
-                required
-                className={inputClasses}
+            {!loadingVenue && (
+              <PlaceSelects
+                country={centerCountry}
+                stateName={centerState}
+                city={centerCity}
+                onCountry={setCenterCountry}
+                onState={setCenterState}
+                onCity={setCenterCity}
+                inputClassName={inputClasses}
+                labelClassName={labelClasses}
               />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className={labelClasses}>State / Province</label>
-
-              <input
-                type="text"
-                value={centerState}
-                onChange={(e) => setCenterState(e.target.value)}
-                placeholder="Maharashtra"
-                maxLength={100}
-                required
-                className={inputClasses}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className={labelClasses}>Country</label>
-
-              <input
-                type="text"
-                value={centerCountry}
-                onChange={(e) => setCenterCountry(e.target.value)}
-                placeholder="India"
-                maxLength={100}
-                required
-                className={inputClasses}
-              />
-            </div>
+            )}
 
             <div className="space-y-1.5">
               <label className={labelClasses}>Pincode / Postal Code</label>

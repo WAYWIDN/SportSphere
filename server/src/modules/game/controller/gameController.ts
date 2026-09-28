@@ -9,6 +9,10 @@ import { GameJoinRequest } from '../model/gameJoinRequestModel';
 import { Game } from '../model/gameModel';
 import { addGameClient, sendGameEvent } from '../utils/gameEventUtils';
 import { queueGameNotification } from '../utils/gameNotificationQueue';
+import {
+  loadPublicUsers,
+  toPublicUser,
+} from '../../profile-management/utils/userNameUtils';
 
 const PAGE_SIZE = 10;
 
@@ -24,9 +28,62 @@ const getPage = <T extends { _id: Types.ObjectId }>(items: T[]) => {
 };
 
 const getGamePlayerIds = (game: {
-  creatorId: Types.ObjectId;
-  acceptedPlayerIds: Types.ObjectId[];
-}) => game.acceptedPlayerIds.map((id) => id.toString());
+  creatorId: any;
+  acceptedPlayerIds: any[];
+}) =>
+  game.acceptedPlayerIds.map((id) =>
+    typeof id === 'object' && id?._id ? id._id.toString() : id.toString(),
+  );
+
+export const getPopulatedGame = async (gameId: Types.ObjectId | string) => {
+  const game = await Game.findById(gameId)
+    .populate({
+      path: 'subvenueId',
+      populate: { path: 'venueId', select: 'name location images' },
+    })
+    .populate('slotId')
+    .lean();
+
+  if (!game) return null;
+
+  const acceptedRequests = await GameJoinRequest.find({
+    gameId: game._id,
+    status: 'accepted',
+  })
+    .select('userId createdAt respondedAt')
+    .lean();
+
+  const joinTimeMap = new Map<string, Date>();
+  for (const req of acceptedRequests) {
+    joinTimeMap.set(req.userId.toString(), req.respondedAt || req.createdAt);
+  }
+
+  const users = await loadPublicUsers([
+    game.creatorId,
+    ...game.acceptedPlayerIds,
+  ]);
+  const creator = toPublicUser(game.creatorId, users);
+
+  const populatedPlayers = (game.acceptedPlayerIds || []).map((playerId) => {
+    const playerIdStr = playerId.toString();
+    const isHost = playerIdStr === creator._id;
+    const joinedAt = isHost
+      ? game.createdAt
+      : joinTimeMap.get(playerIdStr) || game.createdAt;
+
+    return {
+      ...toPublicUser(playerId, users),
+      joinedAt,
+      isHost,
+    };
+  });
+
+  return {
+    ...game,
+    creatorId: creator,
+    acceptedPlayerIds: populatedPlayers,
+  };
+};
 
 export const createGameController = async (req: Request, res: Response) => {
   const creatorId = req.userMetadata?.id;
@@ -77,14 +134,21 @@ export const createGameController = async (req: Request, res: Response) => {
       status: minimumPlayers <= 1 ? 'ready' : 'forming',
     });
 
-    if (game.status === 'ready') {
-      sendGameEvent(game._id.toString(), 'game_ready', { game });
+    const populatedGame = await getPopulatedGame(game._id);
+    if (!populatedGame) {
+      return res
+        .status(500)
+        .json({ success: false, message: 'Failed to load created game' });
+    }
+
+    if (populatedGame.status === 'ready') {
+      sendGameEvent(game._id.toString(), 'game_ready', { game: populatedGame });
     }
 
     return res.status(201).json({
       success: true,
       message: 'Game created successfully',
-      data: game,
+      data: populatedGame,
     });
   } catch (error) {
     console.error('Error creating game:', error);
@@ -97,6 +161,7 @@ export const createGameController = async (req: Request, res: Response) => {
 export const searchGamesController = async (req: Request, res: Response) => {
   const {
     subvenueId,
+    subvenueName,
     sport,
     date,
     status,
@@ -105,6 +170,7 @@ export const searchGamesController = async (req: Request, res: Response) => {
     lastGameId,
   } = req.body as {
     subvenueId?: string;
+    subvenueName?: string;
     sport?: string;
     date?: string;
     status?: 'forming' | 'ready';
@@ -123,12 +189,15 @@ export const searchGamesController = async (req: Request, res: Response) => {
 
     if (subvenueId) {
       filter.subvenueId = subvenueId;
-    }
-
-    if (sport && !subvenueId) {
-      const matchingSubvenues = await Subvenue.find({
-        sport: { $regex: sport, $options: 'i' },
-      })
+    } else if (subvenueName || sport) {
+      const subvenueQuery: Record<string, unknown> = {};
+      if (subvenueName) {
+        subvenueQuery.name = { $regex: subvenueName.trim(), $options: 'i' };
+      }
+      if (sport) {
+        subvenueQuery.sport = { $regex: sport.trim(), $options: 'i' };
+      }
+      const matchingSubvenues = await Subvenue.find(subvenueQuery)
         .select('_id')
         .lean();
       filter.subvenueId = { $in: matchingSubvenues.map((sv) => sv._id) };
@@ -153,16 +222,30 @@ export const searchGamesController = async (req: Request, res: Response) => {
     const games = await Game.find(filter)
       .sort({ _id: -1 })
       .limit(PAGE_SIZE + 1)
-      .populate('creatorId', 'email')
-      .populate('subvenueId')
+      .populate({
+        path: 'subvenueId',
+        populate: { path: 'venueId', select: 'name location images' },
+      })
       .populate('slotId')
       .lean();
 
     const page = getPage(games);
+    const userIds = page.data.flatMap((game) => [
+      game.creatorId,
+      ...game.acceptedPlayerIds,
+    ]);
+    const users = await loadPublicUsers(userIds);
+    const data = page.data.map((game) => ({
+      ...game,
+      creatorId: toPublicUser(game.creatorId, users),
+      acceptedPlayerIds: game.acceptedPlayerIds.map((playerId) =>
+        toPublicUser(playerId, users),
+      ),
+    }));
 
     return res.status(200).json({
       success: true,
-      data: page.data,
+      data,
       pagination: {
         limit: PAGE_SIZE,
         lastGameId: page.lastId,
@@ -179,11 +262,8 @@ export const searchGamesController = async (req: Request, res: Response) => {
 
 export const getGameController = async (req: Request, res: Response) => {
   try {
-    const game = await Game.findById(req.params.gameId)
-      .populate('creatorId', 'email')
-      .populate('subvenueId')
-      .populate('slotId')
-      .lean();
+    const gameId = req.params.gameId as string;
+    const game = await getPopulatedGame(gameId);
     if (!game) {
       return res
         .status(404)
@@ -204,16 +284,18 @@ export const streamGameController = async (req: Request, res: Response) => {
   const gameId = req.params.gameId as string;
 
   try {
-    const game = await Game.findOne({
+    const existingGame = await Game.findOne({
       _id: gameId,
       $or: [{ creatorId: userId }, { acceptedPlayerIds: userId }],
     }).lean();
 
-    if (!game) {
+    if (!existingGame) {
       return res
         .status(403)
         .json({ success: false, message: 'You are not part of this game' });
     }
+
+    const game = await getPopulatedGame(gameId);
 
     res.status(200);
     res.setHeader('Content-Type', 'text/event-stream');
@@ -342,9 +424,13 @@ export const getJoinRequestsController = async (
 
     const requests = await GameJoinRequest.find({ gameId: game._id })
       .sort({ _id: -1 })
-      .populate('userId', 'email')
       .lean();
-    return res.status(200).json({ success: true, data: requests });
+    const users = await loadPublicUsers(requests.map((request) => request.userId));
+    const data = requests.map((request) => ({
+      ...request,
+      userId: toPublicUser(request.userId, users),
+    }));
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error('Error retrieving game join requests:', error);
     return res.status(500).json({
@@ -358,7 +444,10 @@ export const updateJoinRequestController = async (
   req: Request,
   res: Response,
 ) => {
-  const { gameId, requestId } = req.params;
+  const { gameId, requestId } = req.params as {
+    gameId: string;
+    requestId: string;
+  };
   const status = req.body.status as 'accepted' | 'rejected';
 
   try {
@@ -436,12 +525,6 @@ export const updateJoinRequestController = async (
       status: 'join-accepted',
     });
 
-    sendGameEvent(game._id.toString(), 'join_request_accepted', {
-      requestId: acceptedRequest._id,
-      userId: acceptedRequest.userId,
-      game: updatedGame,
-    });
-
     if (updatedGame.acceptedPlayerIds.length >= updatedGame.minimumPlayers) {
       updatedGame.status = 'ready';
       updatedGame.updatedAt = new Date();
@@ -451,14 +534,25 @@ export const updateJoinRequestController = async (
         recipientIds: [game.creatorId.toString()],
         status: 'minimum-reached',
       });
+    }
+
+    const populatedGame = await getPopulatedGame(gameId);
+
+    sendGameEvent(game._id.toString(), 'join_request_accepted', {
+      requestId: acceptedRequest._id,
+      userId: acceptedRequest.userId,
+      game: populatedGame,
+    });
+
+    if (populatedGame && populatedGame.status === 'ready') {
       sendGameEvent(game._id.toString(), 'game_ready', {
-        game: updatedGame,
+        game: populatedGame,
       });
     }
 
     return res.status(200).json({
       success: true,
-      data: { request: acceptedRequest, game: updatedGame },
+      data: { request: acceptedRequest, game: populatedGame },
     });
   } catch (error) {
     console.error('Error updating game join request:', error);
@@ -542,12 +636,14 @@ export const bookGameController = async (req: Request, res: Response) => {
       recipientIds: getGamePlayerIds(game),
       status: 'booked',
     });
+    const populatedGame = await getPopulatedGame(game._id);
+
     sendGameEvent(game._id.toString(), 'game_booked', {
       bookingId: booking._id,
-      game,
+      game: populatedGame,
     });
 
-    return res.status(200).json({ success: true, data: { game, booking } });
+    return res.status(200).json({ success: true, data: { game: populatedGame, booking } });
   } catch (error) {
     if (bookingId) {
       await Booking.findByIdAndDelete(bookingId);
@@ -604,11 +700,18 @@ export const cancelGameController = async (req: Request, res: Response) => {
     game.status = 'cancelled';
     game.updatedAt = new Date();
     await game.save();
+
+    const populatedGame = await getPopulatedGame(game._id);
+    if (!populatedGame) {
+      return res
+        .status(500)
+        .json({ success: false, message: 'Failed to load cancelled game' });
+    }
+
     sendGameEvent(game._id.toString(), 'game_cancelled', {
-      gameId: game._id,
-      status: 'cancelled',
+      game: populatedGame,
     });
-    return res.status(200).json({ success: true, data: game });
+    return res.status(200).json({ success: true, data: populatedGame });
   } catch (error) {
     console.error('Error cancelling game:', error);
     return res

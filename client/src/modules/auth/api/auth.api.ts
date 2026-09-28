@@ -15,6 +15,8 @@ export interface VerifyOtpData {
 
 export interface RegisterData {
   email: string;
+  firstName: string;
+  lastName: string;
   password: string;
 }
 

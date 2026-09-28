@@ -12,6 +12,7 @@ export interface ICoachProfile extends Document {
     address: string;
     city: string;
     state: string;
+    country: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +69,11 @@ const coachProfileSchema = new Schema<ICoachProfile>({
       trim: true,
     },
     state: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    country: {
       type: String,
       required: true,
       trim: true,

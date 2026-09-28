@@ -7,6 +7,10 @@ import { Venue } from '../model/venueModel';
 import { VenueBookingRequest } from '../model/venueBookingRequestModel';
 import { VenueSlot } from '../model/slotModel';
 import { sendSlotEvent } from '../utils/slotEventUtils';
+import {
+  loadPublicUsers,
+  toPublicUser,
+} from '../../profile-management/utils/userNameUtils';
 
 const PAGE_SIZE = 10;
 
@@ -112,13 +116,17 @@ export const getVenueBookingRequestsController = async (
     const requests = await VenueBookingRequest.find(filter)
       .sort({ _id: -1 })
       .limit(PAGE_SIZE + 1)
-      .populate('userId', 'email')
       .populate('subvenueId')
       .populate('slotId')
       .lean();
 
     const hasNext = requests.length > PAGE_SIZE;
-    const data = requests.slice(0, PAGE_SIZE);
+    const page = requests.slice(0, PAGE_SIZE);
+    const users = await loadPublicUsers(page.map((request) => request.userId));
+    const data = page.map((request) => ({
+      ...request,
+      userId: toPublicUser(request.userId, users),
+    }));
     return res.status(200).json({
       success: true,
       data,

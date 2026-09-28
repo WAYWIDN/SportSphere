@@ -49,10 +49,10 @@ export interface VenueSlotData {
 
 export interface BookingRequestItem {
   _id: string;
-  userId: string | { _id: string; email: string };
+  userId: { _id: string; firstName: string; lastName: string };
   venueOwnerId: string;
-  subvenueId: string | SubvenueData;
-  slotId: string | VenueSlotData;
+  subvenueId: SubvenueData;
+  slotId: VenueSlotData;
   status: "pending" | "approved" | "rejected" | "cancelled";
   createdAt: string;
   updatedAt: string;
@@ -252,12 +252,118 @@ export const venueOwnerApi = {
     return response.data;
   },
 
-  getSlotsStream: (subvenueId: string, date: string): EventSource => {
+  subscribeToSlots: (
+    subvenueId: string,
+    date: string,
+    setSlots: (getNextSlots: (current: VenueSlotData[]) => VenueSlotData[]) => void,
+  ) => {
     const params = new URLSearchParams({ date });
-    return new EventSource(
+    const eventSource = new EventSource(
       `${CLIENT_URL}/v1/subvenues/${subvenueId}/slots/stream?${params.toString()}`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
+
+    const onState = (event: Event) => {
+      try {
+        const parsed = JSON.parse((event as MessageEvent).data) as {
+          slots: VenueSlotData[];
+        };
+        if (parsed.slots) {
+          const nextSlots = parsed.slots;
+          setSlots(() => nextSlots);
+        }
+      } catch (error) {
+        console.error("Failed to parse slots_state event:", error);
+      }
+    };
+
+    const onCreated = (event: Event) => {
+      let parsed: { slot: VenueSlotData };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error("Failed to parse slot_created event:", error);
+        return;
+      }
+
+      const newSlot = parsed.slot;
+      if (!newSlot || newSlot.date !== date) {
+        return;
+      }
+
+      setSlots((current) => {
+        const alreadyListed = current.some((slot) => slot._id === newSlot._id);
+        if (alreadyListed) {
+          return current;
+        }
+
+        const nextSlots = [...current, newSlot];
+        nextSlots.sort((a, b) => a.startEpoch - b.startEpoch);
+        return nextSlots;
+      });
+    };
+
+    const onBooked = (event: Event) => {
+      let parsed: { slotId: string };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error("Failed to parse slot_booked event:", error);
+        return;
+      }
+
+      setSlots((current) =>
+        current.map((slot) => {
+          if (slot._id !== parsed.slotId) {
+            return slot;
+          }
+          return { ...slot, status: "booked" };
+        }),
+      );
+    };
+
+    const onCancelled = (event: Event) => {
+      let parsed: { slotId: string };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error("Failed to parse slot_cancelled event:", error);
+        return;
+      }
+
+      setSlots((current) =>
+        current.filter((slot) => slot._id !== parsed.slotId),
+      );
+    };
+
+    const onAvailable = (event: Event) => {
+      let parsed: { slotId: string };
+      try {
+        parsed = JSON.parse((event as MessageEvent).data);
+      } catch (error) {
+        console.error("Failed to parse slot_available event:", error);
+        return;
+      }
+
+      setSlots((current) =>
+        current.map((slot) => {
+          if (slot._id !== parsed.slotId) {
+            return slot;
+          }
+          return { ...slot, status: "available" };
+        }),
+      );
+    };
+
+    eventSource.addEventListener("slots_state", onState);
+    eventSource.addEventListener("slot_created", onCreated);
+    eventSource.addEventListener("slot_booked", onBooked);
+    eventSource.addEventListener("slot_cancelled", onCancelled);
+    eventSource.addEventListener("slot_available", onAvailable);
+
+    return () => {
+      eventSource.close();
+    };
   },
 
   // Booking Request APIs

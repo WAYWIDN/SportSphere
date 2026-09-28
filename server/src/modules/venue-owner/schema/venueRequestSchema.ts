@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { MINIMUM_SLOT_DURATION_MS } from '../../../utils/timeConstants';
+import { SPORTS } from '../../../constants/placeOptions';
+import { MINIMUM_SLOT_DURATION_MS } from '../../../constants/timeConstants';
 
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i);
 const dateSchema = z
@@ -25,14 +26,14 @@ export const venueRequestSchema = z.object({
   name: z.string().min(1).max(50),
   description: z.string().min(1).max(500),
   location: locationSchema,
-  sports: z.array(z.string().min(1)).min(1),
+  sports: z.array(z.enum(SPORTS)).min(1),
   facilities: z.array(z.string().min(1)).default([]),
   images: z.array(z.string()).default([]),
 });
 
 export const subvenueRequestSchema = z.object({
   name: z.string().min(1).max(50),
-  sport: z.string().min(1),
+  sport: z.enum(SPORTS),
   description: z.string().min(1).max(500),
   images: z.array(z.string()).default([]),
 });

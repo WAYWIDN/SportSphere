@@ -105,7 +105,7 @@ export const cancelBookingController = async (req: Request, res: Response) => {
           slot.date,
           slot._id.toString(),
           'slot_available',
-          { slotId: slot._id },
+          { slot },
         );
       }
     } else if (booking.providerType === 'venue') {
@@ -125,7 +125,7 @@ export const cancelBookingController = async (req: Request, res: Response) => {
           slot.subvenueId.toString(),
           slot.date,
           slot._id.toString(),
-          'slot-cancelled',
+          'slot_available',
           { slot },
         );
       }

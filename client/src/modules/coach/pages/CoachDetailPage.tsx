@@ -10,9 +10,8 @@ import {
   Building,
   User,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import PageButtons from "../../../components/ui/PageButtons";
 import { toast } from "react-toastify";
 import {
   coachApi,
@@ -21,8 +20,6 @@ import {
 } from "../api/coach.api";
 import CoachSlotCard from "../cards/CoachSlotCard";
 import { useAuth } from "../../../context/AuthContext";
-
-const apiBaseUrl = import.meta.env.VITE_CLIENT_URL;
 
 export default function CoachDetailPage() {
   const { coachId } = useParams<{ coachId: string }>();
@@ -201,104 +198,7 @@ export default function CoachDetailPage() {
     if (!coachId || !selectedDate) {
       return;
     }
-    const params = new URLSearchParams({
-      date: selectedDate,
-    });
-
-    const eventSource = new EventSource(
-      `${apiBaseUrl}/v1/coaches/${coachId}/slots/events?${params.toString()}`,
-      {
-        withCredentials: true,
-      },
-    );
-
-    eventSource.addEventListener("slots_state", (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as {
-          slots: CoachSlotData[];
-        };
-
-        const incomingSlots = parsed.slots || [];
-
-        setSlots((currentSlots) => {
-          const incomingMap = new Map(
-            incomingSlots.map((slot) => [slot._id, slot]),
-          );
-
-          return currentSlots
-            .filter((slot) => incomingMap.has(slot._id))
-            .map((slot) => incomingMap.get(slot._id) || slot);
-        });
-      } catch (error) {
-        console.error("Failed to parse slots_state event:", error);
-      }
-    });
-
-    eventSource.addEventListener("slot_created", (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as {
-          slot: CoachSlotData;
-        };
-
-        const newSlot = parsed.slot;
-
-        if (newSlot.date !== selectedDate || newSlot.status !== "available") {
-          return;
-        }
-
-        setSlots((currentSlots) => {
-          const alreadyExists = currentSlots.some(
-            (slot) => slot._id === newSlot._id,
-          );
-
-          if (alreadyExists) {
-            return currentSlots;
-          }
-
-          return [...currentSlots, newSlot].sort(
-            (a, b) => a.startEpoch - b.startEpoch,
-          );
-        });
-      } catch (error) {
-        console.error("Failed to parse slot_created event:", error);
-      }
-    });
-
-    eventSource.addEventListener("slot_booked", (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as {
-          slotId: string;
-        };
-
-        setSlots((currentSlots) =>
-          currentSlots.filter((slot) => slot._id !== parsed.slotId),
-        );
-      } catch (error) {
-        console.error("Failed to parse slot_booked event:", error);
-      }
-    });
-
-    eventSource.addEventListener("slot_cancelled", (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as {
-          slotId: string;
-        };
-
-        setSlots((currentSlots) =>
-          currentSlots.filter((slot) => slot._id !== parsed.slotId),
-        );
-      } catch (error) {
-        console.error("Failed to parse slot_cancelled event:", error);
-      }
-    });
-
-    eventSource.onerror = (error) => {
-      console.error("Coach slot SSE connection error:", error);
-    };
-
-    return () => {
-      eventSource.close();
-    };
+    return coachApi.subscribeToPublicSlots(coachId, selectedDate, setSlots);
   }, [coachId, selectedDate]);
 
   const handleBookSession = async (slotId: string) => {
@@ -396,6 +296,7 @@ export default function CoachDetailPage() {
     coach.coachingCenter?.address,
     coach.coachingCenter?.city,
     coach.coachingCenter?.state,
+    coach.coachingCenter?.country,
   ]
     .filter(Boolean)
     .join(", ");
@@ -500,7 +401,11 @@ export default function CoachDetailPage() {
                   </p>
 
                   <p className="text-muted-foreground">
-                    {[coach.coachingCenter.city, coach.coachingCenter.state]
+                    {[
+                      coach.coachingCenter.city,
+                      coach.coachingCenter.state,
+                      coach.coachingCenter.country,
+                    ]
                       .filter(Boolean)
                       .join(", ")}
                   </p>
@@ -610,42 +515,13 @@ export default function CoachDetailPage() {
                 ))}
               </div>
 
-              {(currentPage > 1 || hasNextSlots) && (
-                <div className="flex items-center justify-center gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={onPreviousPage}
-                    disabled={currentPage <= 1 || loadingPage}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-card text-sm font-semibold hover:bg-muted transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={16} />
-                    Previous
-                  </button>
-
-                  <span className="px-4 py-2.5 text-sm font-semibold">
-                    Page {currentPage}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={onNextPage}
-                    disabled={!hasNextSlots || loadingPage}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-card text-sm font-semibold hover:bg-muted transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {loadingPage ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        Next
-                        <ChevronRight size={16} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+              <PageButtons
+                currentPage={currentPage}
+                hasNext={hasNextSlots}
+                loading={loadingPage}
+                onPrevious={onPreviousPage}
+                onNext={onNextPage}
+              />
             </>
           )}
         </div>

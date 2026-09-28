@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
+import PageButtons from "../../../components/ui/PageButtons";
 import { toast } from "react-toastify";
 import { coachApi, type CoachSlotData } from "../api/coach.api";
 import CoachSlotCard from "../cards/CoachSlotCard";
@@ -210,40 +211,13 @@ export default function SlotListSection() {
               ))}
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handlePrevPage}
-                disabled={currentPage <= 1 || loadingPage}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-                Previous
-              </button>
-
-              <span className="px-4 py-2.5 text-sm font-semibold">
-                Page {currentPage}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleNextPage}
-                disabled={!hasNextSlots || loadingPage}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loadingPage ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ChevronRight size={16} />
-                  </>
-                )}
-              </button>
-            </div>
+            <PageButtons
+              currentPage={currentPage}
+              hasNext={hasNextSlots}
+              loading={loadingPage}
+              onPrevious={handlePrevPage}
+              onNext={handleNextPage}
+            />
           </>
         )}
       </div>

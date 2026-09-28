@@ -2,8 +2,8 @@ import { Document, model, Schema, Types } from 'mongoose';
 
 interface IUserProfile extends Document {
   userId: Types.ObjectId;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phoneNumber?: string;
   gender?: 'male' | 'female' | 'other';
@@ -23,8 +23,8 @@ const userProfileSchema: Schema<IUserProfile> = new Schema({
     required: true,
     unique: true,
   },
-  firstName: { type: String },
-  lastName: { type: String },
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String },
   gender: { type: String, enum: ['male', 'female', 'other'] },

@@ -8,7 +8,8 @@ import {
   IndianRupee,
 } from "lucide-react";
 import type { BookingRequestItem } from "../api/venueOwner.api";
-import { formatTimeEpoch } from "./VenueSlotCard";
+import { formatTimeEpoch } from "../../../utils/formatTime";
+import { formatUserName } from "../../../utils/formatUserName";
 
 interface VenueBookingRequestCardProps {
   request: BookingRequestItem;
@@ -25,20 +26,10 @@ export default function VenueBookingRequestCard({
   onApprove,
   onReject,
 }: VenueBookingRequestCardProps) {
-  const slot =
-    typeof request.slotId === "object" && request.slotId !== null
-      ? (request.slotId as any)
-      : null;
+  const slot = request.slotId;
+  const subvenue = request.subvenueId;
 
-  const subvenue =
-    typeof request.subvenueId === "object" && request.subvenueId !== null
-      ? (request.subvenueId as any)
-      : null;
-
-  const userEmail =
-    typeof request.userId === "object" && request.userId !== null
-      ? (request.userId as { email: string }).email
-      : "Player";
+  const applicantName = formatUserName(request.userId, "Player");
 
   const getStatusBadge = () => {
     if (request.status === "approved") {
@@ -84,7 +75,7 @@ export default function VenueBookingRequestCard({
             />
 
             <span className="break-all">
-              {isVenueView ? `Applicant: ${userEmail}` : userEmail}
+              {isVenueView ? `Applicant: ${applicantName}` : applicantName}
             </span>
           </div>
 

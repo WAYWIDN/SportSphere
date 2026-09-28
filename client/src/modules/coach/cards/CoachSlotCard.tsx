@@ -1,5 +1,6 @@
 import { Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import type { CoachSlotData } from "../api/coach.api";
+import { formatTimeEpoch } from "../../../utils/formatTime";
 
 interface CoachSlotCardProps {
   slot: CoachSlotData;
@@ -7,16 +8,6 @@ interface CoachSlotCardProps {
   isActionLoading?: boolean;
   onRequestSession?: (slotId: string) => void;
   onCancelSlot?: (slotId: string) => void;
-}
-
-export function formatTimeEpoch(epochMs: number): string {
-  if (!epochMs) return "--:--";
-  const date = new Date(epochMs);
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
 }
 
 export default function CoachSlotCard({
