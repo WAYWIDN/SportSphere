@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import {
   Building,
-  Calendar,
-  Clock,
   MapPin,
   ArrowLeft,
   Loader2,
@@ -15,28 +13,18 @@ import {
   venueOwnerApi,
   type VenueProfileData,
   type SubvenueData,
-  type VenueSlotData,
 } from "../api/venueOwner.api";
-import VenueSlotCard from "../cards/VenueSlotCard";
-import { useAuth } from "../../../context/AuthContext";
+import SubvenueCard from "../cards/SubvenueCard";
 
 export default function VenueDetailPage() {
   const { venueId } = useParams<{ venueId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [venue, setVenue] = useState<VenueProfileData | null>(null);
   const [loadingVenue, setLoadingVenue] = useState(true);
 
   const [subvenues, setSubvenues] = useState<SubvenueData[]>([]);
-  const [selectedSubvenueId, setSelectedSubvenueId] = useState<string>("");
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
-
-  const [slots, setSlots] = useState<VenueSlotData[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
+  const [loadingSubvenues, setLoadingSubvenues] = useState(false);
 
   // Fetch venue details
   useEffect(() => {
@@ -74,168 +62,21 @@ export default function VenueDetailPage() {
 
     const fetchSubvenues = async () => {
       try {
+        setLoadingSubvenues(true);
         const res = await venueOwnerApi.getSubvenues(venue._id);
         if (res.success) {
           const list = res.data || [];
           setSubvenues(list);
-          if (list.length > 0) {
-            setSelectedSubvenueId(list[0]._id);
-          }
         }
+        setLoadingSubvenues(false);
       } catch (err: any) {
         toast.error(err.response?.data?.message || "Failed to load subvenues");
+        setLoadingSubvenues(false);
       }
     };
 
     fetchSubvenues();
   }, [venue]);
-
-  // Fetch slots and subscribe to real-time SSE stream
-  useEffect(() => {
-    if (!selectedSubvenueId || !selectedDate) {
-      setSlots([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchSlotsAndSSE = async () => {
-      setLoadingSlots(true);
-
-      try {
-        const res = await venueOwnerApi.getSlots(
-          selectedSubvenueId,
-          selectedDate,
-        );
-        if (cancelled) return;
-
-        if (res.success) {
-          setSlots(res.data || []);
-        }
-      } catch (err: any) {
-        if (cancelled) return;
-        toast.error(
-          err.response?.data?.message || "Failed to load slots for date",
-        );
-        setSlots([]);
-      } finally {
-        if (!cancelled) setLoadingSlots(false);
-      }
-
-      // Establish SSE stream
-      try {
-        const eventSource = venueOwnerApi.getSlotsStream(
-          selectedSubvenueId,
-          selectedDate,
-        );
-
-        eventSource.addEventListener("slots_state", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slots: VenueSlotData[];
-            };
-            if (parsed.slots) {
-              setSlots(parsed.slots);
-            }
-          } catch (e) {
-            console.error("Failed to parse slots_state event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_created", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as {
-              slot: VenueSlotData;
-            };
-            const newSlot = parsed.slot;
-            if (newSlot && newSlot.date === selectedDate) {
-              setSlots((current) => {
-                if (current.some((s) => s._id === newSlot._id)) return current;
-                return [...current, newSlot].sort(
-                  (a, b) => a.startEpoch - b.startEpoch,
-                );
-              });
-            }
-          } catch (e) {
-            console.error("Failed to parse slot_created event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_booked", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as { slotId: string };
-            setSlots((current) =>
-              current.map((s) =>
-                s._id === parsed.slotId ? { ...s, status: "booked" } : s,
-              ),
-            );
-          } catch (e) {
-            console.error("Failed to parse slot_booked event:", e);
-          }
-        });
-
-        eventSource.addEventListener("slot_cancelled", (event) => {
-          try {
-            const parsed = JSON.parse(event.data) as { slotId: string };
-            setSlots((current) =>
-              current.filter((s) => s._id !== parsed.slotId),
-            );
-          } catch (e) {
-            console.error("Failed to parse slot_cancelled event:", e);
-          }
-        });
-
-        return () => {
-          eventSource.close();
-        };
-      } catch (err) {
-        console.error("SSE stream connection error:", err);
-      }
-    };
-
-    const cleanupPromise = fetchSlotsAndSSE();
-
-    return () => {
-      cancelled = true;
-      cleanupPromise.then((cleanup) => {
-        if (cleanup) cleanup();
-      });
-    };
-  }, [selectedSubvenueId, selectedDate]);
-
-  const handleBookingRequest = async (slotId: string) => {
-    if (!user) {
-      toast.info("Please login to request a court booking");
-      navigate("/login");
-      return;
-    }
-
-    if (user.role !== "player") {
-      toast.error("Only players can book court slots");
-      return;
-    }
-
-    setBookingSlotId(slotId);
-
-    try {
-      const res = await venueOwnerApi.createBookingRequest(
-        selectedSubvenueId,
-        slotId,
-      );
-
-      if (res.success) {
-        toast.success(
-          "Booking request sent successfully! The venue owner will review it shortly.",
-        );
-      }
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Failed to send booking request",
-      );
-    } finally {
-      setBookingSlotId(null);
-    }
-  };
 
   if (loadingVenue) {
     return (
@@ -282,10 +123,6 @@ export default function VenueDetailPage() {
   ]
     .filter(Boolean)
     .join(", ");
-
-  const selectedSubvenue = subvenues.find(
-    (sv) => sv._id === selectedSubvenueId,
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-16 px-4 sm:px-6 lg:px-8">
@@ -382,6 +219,29 @@ export default function VenueDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Photos */}
+          {venue.images && venue.images.length > 1 ? (
+            <div className="border-t border-border pt-5 space-y-2">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Gallery
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {venue.images.map((image, index) => (
+                  <div
+                    key={index}
+                    className="relative w-full h-40 rounded-2xl overflow-hidden border border-border bg-muted"
+                  >
+                    <img
+                      src={image}
+                      alt={`Court image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Available Slots Section */}
@@ -389,98 +249,44 @@ export default function VenueDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
               <h2 className="text-xl font-bold tracking-tight">
-                Available Time Slots
+                Available Courts / Subvenues
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Choose court and date to book a playing session
+                Choose a court to book a playing session
               </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto min-w-0">
-              {subvenues.length > 0 && (
-                <div className="w-full sm:w-auto min-w-0 max-w-full overflow-hidden">
-                  <select
-                    value={selectedSubvenueId}
-                    onChange={(e) => setSelectedSubvenueId(e.target.value)}
-                    className="w-full sm:w-auto min-w-0 max-w-full px-3 py-1.5 rounded-xl border border-input bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-ring/20 transition truncate"
-                  >
-                    {subvenues.map((sv) => (
-                      <option key={sv._id} value={sv._id}>
-                        {sv.name} ({sv.sport})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-input bg-background shrink-0">
-                <Calendar size={14} className="text-muted-foreground" />
-
-                <input
-                  type="date"
-                  value={selectedDate}
-                  min={todayStr}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-xs font-semibold focus:outline-none cursor-pointer"
-                />
-              </div>
             </div>
           </div>
 
-          {/* Subvenue details info */}
-          {selectedSubvenue ? (
-            <div className="bg-muted/40 rounded-2xl p-4 border border-border flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-bold text-foreground wrap-anywhere">
-                  {selectedSubvenue.name}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5 wrap-anywhere">
-                  Sport: {selectedSubvenue.sport} •{" "}
-                  {selectedSubvenue.description}
-                </p>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Slots List */}
-          {loadingSlots ? (
+          {loadingSubvenues ? (
             <div className="py-12 text-center">
               <Loader2
                 className="animate-spin text-primary mx-auto mb-2"
                 size={28}
               />
               <p className="text-xs text-muted-foreground">
-                Checking available slots for {selectedDate}...
+                Loading subvenues...
               </p>
             </div>
-          ) : !selectedSubvenueId ? (
-            <div className="py-12 text-center space-y-2">
-              <p className="text-xs text-muted-foreground">
-                This venue has not set up any subvenues yet.
-              </p>
-            </div>
-          ) : slots.length === 0 ? (
+          ) : subvenues.length === 0 ? (
             <div className="py-12 text-center space-y-2">
               <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                <Clock size={22} />
+                <Building size={22} />
               </div>
-              <h3 className="text-sm font-bold">
-                No Open Slots on {selectedDate}
-              </h3>
+              <h3 className="text-sm font-bold">No Courts Available</h3>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                No slots are scheduled for this date. Please pick a different
-                date or subvenue.
+                This venue has not added any subvenues/courts yet.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
-              {slots.map((slot) => (
-                <VenueSlotCard
-                  key={slot._id}
-                  slot={slot}
-                  isVenueView={false}
-                  isActionLoading={bookingSlotId === slot._id}
-                  onRequestBooking={handleBookingRequest}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subvenues.map((sv) => (
+                <SubvenueCard
+                  key={sv._id}
+                  subvenue={sv}
+                  onSelect={() => {
+                    // Navigate to subvenue detail page
+                    navigate(`/venues/${venueId}/subvenues/${sv._id}`);
+                  }}
                 />
               ))}
             </div>

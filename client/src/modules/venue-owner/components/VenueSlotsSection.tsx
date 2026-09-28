@@ -5,6 +5,7 @@ import {
   Building,
   Plus,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -14,7 +15,7 @@ import {
   type VenueSlotData,
 } from "../api/venueOwner.api";
 import VenueSlotCard from "../cards/VenueSlotCard";
-import CreateSubvenueForm from "./CreateSubvenueForm";
+import SubVenueForm from "./SubVenueForm";
 import CreateVenueSlotForm from "./CreateVenueSlotForm";
 
 export default function VenueSlotsSection() {
@@ -25,6 +26,7 @@ export default function VenueSlotsSection() {
   const [loadingSubvenues, setLoadingSubvenues] = useState(false);
   const [selectedSubvenueId, setSelectedSubvenueId] = useState<string>("");
   const [showAddSubvenue, setShowAddSubvenue] = useState(false);
+  const [editingSubvenue, setEditingSubvenue] = useState<SubvenueData | null>(null);
   const [deletingSubvenueId, setDeletingSubvenueId] = useState<string | null>(null);
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -284,12 +286,25 @@ export default function VenueSlotsSection() {
         </div>
 
         {showAddSubvenue ? (
-          <CreateSubvenueForm
+          <SubVenueForm
             venueId={venue._id}
-            onCreated={() => {
+            onSaved={() => {
               setShowAddSubvenue(false);
               fetchSubvenues(venue._id);
             }}
+            onCancel={() => setShowAddSubvenue(false)}
+          />
+        ) : null}
+
+        {editingSubvenue ? (
+          <SubVenueForm
+            venueId={venue._id}
+            initialData={editingSubvenue}
+            onSaved={() => {
+              setEditingSubvenue(null);
+              fetchSubvenues(venue._id);
+            }}
+            onCancel={() => setEditingSubvenue(null)}
           />
         ) : null}
 
@@ -335,20 +350,37 @@ export default function VenueSlotsSection() {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    disabled={deletingSubvenueId === sv._id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSubvenue(sv._id);
-                    }}
-                    className={`p-1 rounded-full hover:bg-black/10 transition cursor-pointer ${
-                      isSelected ? "text-primary-foreground/90" : "text-muted-foreground"
-                    }`}
-                    title="Delete subvenue"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSubvenue(sv);
+                        setShowAddSubvenue(false);
+                      }}
+                      className={`p-1 rounded-full hover:bg-black/10 transition cursor-pointer ${
+                        isSelected ? "text-primary-foreground/90" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title="Edit subvenue details & images"
+                    >
+                      <Pencil size={13} />
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={deletingSubvenueId === sv._id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSubvenue(sv._id);
+                      }}
+                      className={`p-1 rounded-full hover:bg-black/10 transition cursor-pointer ${
+                        isSelected ? "text-primary-foreground/90" : "text-muted-foreground hover:text-destructive"
+                      }`}
+                      title="Delete subvenue"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -358,11 +390,13 @@ export default function VenueSlotsSection() {
 
       {/* 2. Create Slot Form for Selected Subvenue */}
       {selectedSubvenueId ? (
-        <CreateVenueSlotForm
-          subvenueId={selectedSubvenueId}
-          subvenueName={selectedSubvenue?.name}
-          onCreated={() => fetchSlots(selectedSubvenueId, selectedDate)}
-        />
+        <div className="space-y-4">
+          <CreateVenueSlotForm
+            subvenueId={selectedSubvenueId}
+            subvenueName={selectedSubvenue?.name}
+            onCreated={() => fetchSlots(selectedSubvenueId, selectedDate)}
+          />
+        </div>
       ) : null}
 
       {/* 3. Slot Schedule & Realtime View */}
@@ -371,7 +405,7 @@ export default function VenueSlotsSection() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
               <h2 className="text-xl font-bold tracking-tight wrap-anywhere">
-                Scheduled Slots — {selectedSubvenue?.name}
+                Scheduled Slots - {selectedSubvenue?.name}
               </h2>
             </div>
 

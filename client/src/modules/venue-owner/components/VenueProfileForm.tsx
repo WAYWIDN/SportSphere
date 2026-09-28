@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { venueOwnerApi, type VenueProfileData } from "../api/venueOwner.api";
 import { useAuth } from "../../../context/AuthContext";
+import { uploadFile } from "../../../service/cloudinary";
 
 interface VenueProfileFormProps {
   onVenueUpdated?: (venue: VenueProfileData) => void;
@@ -29,14 +30,19 @@ export default function VenueProfileForm({
   const [sportsInput, setSportsInput] = useState("");
   const [facilitiesInput, setFacilitiesInput] = useState("");
 
-  const [venueImages, setVenueImages] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-
   const [centerAddress, setCenterAddress] = useState("");
   const [centerCity, setCenterCity] = useState("");
   const [centerState, setCenterState] = useState("");
   const [centerCountry, setCenterCountry] = useState("");
   const [centerPincode, setCenterPincode] = useState("");
+
+  // New venue images
+  const [venueImages, setVenueImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Existing venue images marked for deletion
+  const [removedExistingImageIndices, setRemovedExistingImageIndices] =
+    useState<number[]>([]);
 
   const existingImages = venue?.images || [];
 
@@ -89,6 +95,10 @@ export default function VenueProfileForm({
     };
   }, [venueImages]);
 
+  const totalImages =
+    existingImages.length - removedExistingImageIndices.length +
+    venueImages.length;
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
@@ -111,10 +121,14 @@ export default function VenueProfileForm({
     e.target.value = "";
   };
 
-  const removeImage = (index: number) => {
-    setVenueImages((currentImages) =>
-      currentImages.filter((_, i) => i !== index),
-    );
+  const removeImage = (index: number, isExisting: boolean = false) => {
+    if (isExisting) {
+      setRemovedExistingImageIndices((prev) =>
+        prev.includes(index) ? prev : [...prev, index],
+      );
+    } else {
+      setVenueImages((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSaveVenue = async (e: React.FormEvent) => {
@@ -151,12 +165,39 @@ export default function VenueProfileForm({
     setSavingVenue(true);
 
     try {
+      // Upload newly selected venue images
+      const newImageUrls = await Promise.all(
+        venueImages.map(async (file) => {
+          try {
+            return await uploadFile(file);
+          } catch (err: any) {
+            toast.error(
+              err.response?.data?.message ||
+                err.message ||
+                "Failed to upload image",
+            );
+
+            return "";
+          }
+        }),
+      );
+
+      const validNewImageUrls = newImageUrls.filter(Boolean);
+
+      // Keep existing images that were not removed
+      const remainingExistingImages = existingImages.filter(
+        (_, index) => !removedExistingImageIndices.includes(index),
+      );
+
+      // Final list of venue images
+      const allImages = [...remainingExistingImages, ...validNewImageUrls];
+
       const payload = {
         name: name.trim(),
         description: description.trim(),
         sports: sportsList,
         facilities: facilitiesList,
-        images: [],
+        images: allImages,
         location: {
           address: centerAddress.trim(),
           city: centerCity.trim(),
@@ -172,6 +213,8 @@ export default function VenueProfileForm({
         if (res.success) {
           toast.success("Venue profile updated successfully!");
           setVenue(res.data);
+          setVenueImages([]);
+          setRemovedExistingImageIndices([]);
 
           if (onVenueUpdated) {
             onVenueUpdated(res.data);
@@ -183,6 +226,8 @@ export default function VenueProfileForm({
         if (res.success) {
           toast.success("Venue created successfully!");
           setVenue(res.data);
+          setVenueImages([]);
+          setRemovedExistingImageIndices([]);
 
           if (onVenueUpdated) {
             onVenueUpdated(res.data);
@@ -197,8 +242,6 @@ export default function VenueProfileForm({
       setSavingVenue(false);
     }
   };
-
-  const totalImages = existingImages.length + venueImages.length;
 
   if (loadingVenue) {
     return (
@@ -341,18 +384,34 @@ export default function VenueProfileForm({
           {totalImages > 0 && (
             <div className="w-full min-w-0 overflow-x-auto pb-2">
               <div className="flex w-max gap-3">
-                {existingImages.map((image, index) => (
-                  <div
-                    key={`existing-${index}`}
-                    className="relative w-40 h-28 rounded-2xl overflow-hidden border border-border bg-muted shrink-0"
-                  >
-                    <img
-                      src={image}
-                      alt={`Venue ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
+                {existingImages.map((image, index) => {
+                  const isRemoved =
+                    removedExistingImageIndices.includes(index);
+
+                  if (isRemoved) return null;
+
+                  return (
+                    <div
+                      key={`existing-${index}`}
+                      className="relative w-40 h-28 rounded-2xl overflow-hidden border border-border bg-muted shrink-0 group"
+                    >
+                      <img
+                        src={image}
+                        alt={`Venue ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index, true)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
 
                 {previewUrls.map((url, index) => (
                   <div

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router";
 import Home from "./pages/Home.tsx";
 import VenueListPage from "./modules/venue-owner/pages/VenueListPage.tsx";
 import VenueDetailPage from "./modules/venue-owner/pages/VenueDetailPage.tsx";
+import SubvenueDetailPage from "./modules/venue-owner/pages/SubvenueDetailPage.tsx";
 import Game from "./pages/Game.tsx";
 
 // Auth Pages
@@ -38,6 +39,10 @@ export default function App() {
 
       <Route path="/venues" element={<VenueListPage />} />
       <Route path="/venues/:venueId" element={<VenueDetailPage />} />
+      <Route
+        path="/venues/:venueId/subvenues/:subvenueId"
+        element={<SubvenueDetailPage />}
+      />
       <Route path="/venue-owner" element={<VenueOwnerDashboardPage />} />
       <Route path="/my-bookings" element={<VenueBookingRequestsPage />} />
 

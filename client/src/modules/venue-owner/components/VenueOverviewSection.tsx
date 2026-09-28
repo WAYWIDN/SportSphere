@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
-import {
-  Building,
-  Calendar,
-  Clock,
-  Plus,
-  ArrowRight,
-  Loader2,
-  MapPin,
-  Trophy,
-} from "lucide-react";
+import { Building, Plus, Loader2, MapPin } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   venueOwnerApi,
@@ -30,7 +20,6 @@ export default function VenueOverviewSection({
   const { user } = useAuth();
   const [venue, setVenue] = useState<VenueProfileData | null>(null);
   const [subvenues, setSubvenues] = useState<SubvenueData[]>([]);
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,12 +36,6 @@ export default function VenueOverviewSection({
               setSubvenues(subRes.data || []);
             }
           }
-        }
-
-        const reqRes = await venueOwnerApi.getMyBookingRequests();
-        if (reqRes.success && reqRes.data) {
-          const pending = reqRes.data.filter((r) => r.status === "pending");
-          setPendingRequestsCount(pending.length);
         }
       } catch (err: any) {
         toast.error(
@@ -85,7 +68,8 @@ export default function VenueOverviewSection({
         </div>
         <h2 className="text-xl font-bold">No Venue Profile Found</h2>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          Create your venue profile to start adding subvenues, scheduling slots, and accepting bookings.
+          Create your venue profile to start adding subvenues, scheduling slots,
+          and accepting bookings.
         </p>
         <button
           type="button"
@@ -183,80 +167,6 @@ export default function VenueOverviewSection({
         ) : null}
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-card rounded-[2.5rem] p-6 shadow-xl shadow-black/5 border border-border text-center">
-          <div className="w-12 h-12 mx-auto rounded-full bg-muted/50 flex items-center justify-center text-foreground mb-3">
-            <Building size={24} />
-          </div>
-          <p className="text-3xl font-bold">{subvenues.length}</p>
-          <p className="text-xs text-muted-foreground mt-1">Subvenues / Courts</p>
-        </div>
-
-        <div className="bg-card rounded-[2.5rem] p-6 shadow-xl shadow-black/5 border border-border text-center">
-          <div className="w-12 h-12 mx-auto rounded-full bg-muted/50 flex items-center justify-center text-foreground mb-3">
-            <Clock size={24} />
-          </div>
-          <p className="text-3xl font-bold">{pendingRequestsCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Pending Bookings</p>
-        </div>
-
-        <div className="bg-card rounded-[2.5rem] p-6 shadow-xl shadow-black/5 border border-border text-center">
-          <div className="w-12 h-12 mx-auto rounded-full bg-muted/50 flex items-center justify-center text-foreground mb-3">
-            <Trophy size={24} />
-          </div>
-          <p className="text-3xl font-bold">{venue.sports?.length || 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">Sports Offered</p>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-4">
-        <h2 className="text-lg font-bold tracking-tight">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() => onSwitchTab?.("slots")}
-            className="group flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card hover:bg-muted transition cursor-pointer text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition">
-              <Plus size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Manage Slots</p>
-              <p className="text-xs text-muted-foreground">Add & manage court slots</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSwitchTab?.("bookings")}
-            className="group flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card hover:bg-muted transition cursor-pointer text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-muted/50 text-foreground flex items-center justify-center group-hover:bg-muted transition">
-              <Calendar size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Booking Requests</p>
-              <p className="text-xs text-muted-foreground">Approve or reject players</p>
-            </div>
-          </button>
-
-          <Link
-            to={`/venues/${venue._id}`}
-            className="group flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card hover:bg-muted transition cursor-pointer text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-muted/50 text-foreground flex items-center justify-center group-hover:bg-muted transition">
-              <ArrowRight size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Public Page</p>
-              <p className="text-xs text-muted-foreground">View as players see it</p>
-            </div>
-          </Link>
-        </div>
-      </div>
-
       {/* Subvenues List */}
       <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6">
         <div className="flex items-center justify-between">
@@ -283,7 +193,8 @@ export default function VenueOverviewSection({
             </div>
             <h3 className="text-sm font-bold">No Subvenues Added Yet</h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              Add subvenues (e.g. Court 1, Pitch A) under the Slots & Schedule tab to start creating slots.
+              Add subvenues (e.g. Court 1, Pitch A) under the Slots & Schedule
+              tab to start creating slots.
             </p>
           </div>
         ) : (
