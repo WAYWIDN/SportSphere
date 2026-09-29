@@ -18,9 +18,9 @@ import {
   slotIdParamsSchema,
 } from '../schema/coachRequestSchema';
 
-const sessionRequestRouter: Router = Router();
+const coachSessionRequestRouter: Router = Router();
 
-sessionRequestRouter.post(
+coachSessionRequestRouter.post(
   '/v1/slots/:slotId/requests',
   authMiddleware,
   requireRole('player'),
@@ -28,7 +28,7 @@ sessionRequestRouter.post(
   createSessionRequestController,
 );
 
-sessionRequestRouter.get(
+coachSessionRequestRouter.get(
   '/v1/coach/session-requests',
   authMiddleware,
   requireRole('coach'),
@@ -36,7 +36,7 @@ sessionRequestRouter.get(
   getCoachSessionRequestsController,
 );
 
-sessionRequestRouter.patch(
+coachSessionRequestRouter.patch(
   '/v1/coach/session-requests/:requestId',
   authMiddleware,
   requireRole('coach'),
@@ -45,4 +45,4 @@ sessionRequestRouter.patch(
   updateSessionRequestController,
 );
 
-export default sessionRequestRouter;
+export default coachSessionRequestRouter;

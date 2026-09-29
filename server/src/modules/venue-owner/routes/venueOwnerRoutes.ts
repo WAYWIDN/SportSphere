@@ -46,17 +46,18 @@ import {
 } from '../schema/venueRequestSchema';
 
 const venueOwnerRouter: Router = Router();
-const venueOwnerAuth = [authMiddleware, requireRole('venue-owner')];
 
 venueOwnerRouter.post(
   '/v1/venues',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validate(venueRequestSchema),
   createVenueController,
 );
 venueOwnerRouter.get(
   '/v1/venue-owner/venues',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   getMyVenuesController,
 );
 venueOwnerRouter.post(
@@ -71,27 +72,32 @@ venueOwnerRouter.get(
 );
 venueOwnerRouter.patch(
   '/v1/venues/:venueId',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(venueIdParamsSchema),
   validate(venueRequestSchema.partial()),
   updateVenueController,
 );
 venueOwnerRouter.delete(
   '/v1/venues/:venueId',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(venueIdParamsSchema),
   deleteVenueController,
 );
 
 venueOwnerRouter.post(
   '/v1/venues/:venueId/subvenues',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(venueIdParamsSchema),
   validate(subvenueRequestSchema),
   createSubvenueController,
 );
 venueOwnerRouter.get(
   '/v1/venues/:venueId/subvenues',
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(venueIdParamsSchema),
   getSubvenuesController,
 );
@@ -102,33 +108,40 @@ venueOwnerRouter.get(
 );
 venueOwnerRouter.patch(
   '/v1/subvenues/:subvenueId',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(subvenueIdParamsSchema),
   validate(subvenueRequestSchema.partial()),
   updateSubvenueController,
 );
 venueOwnerRouter.delete(
   '/v1/subvenues/:subvenueId',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(subvenueIdParamsSchema),
   deleteSubvenueController,
 );
 
 venueOwnerRouter.post(
   '/v1/subvenues/:subvenueId/slots',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(subvenueIdParamsSchema),
   validate(slotRequestSchema),
   createSlotController,
 );
 venueOwnerRouter.get(
   '/v1/subvenues/:subvenueId/slots',
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(subvenueIdParamsSchema),
   validateQuery(venueDateQuerySchema),
   getSlotsController,
 );
 venueOwnerRouter.get(
   '/v1/subvenues/:subvenueId/slots/stream',
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(subvenueIdParamsSchema),
   validateQuery(venueDateQuerySchema),
   streamSlotController,
@@ -136,32 +149,11 @@ venueOwnerRouter.get(
 
 venueOwnerRouter.delete(
   '/v1/slots/:slotId',
-  ...venueOwnerAuth,
+  authMiddleware,
+  requireRole('venue-owner'),
   validateParams(slotIdParamsSchema),
   deleteSlotController,
 );
 
-venueOwnerRouter.post(
-  '/v1/subvenues/:subvenueId/slots/:slotId/booking-requests',
-  authMiddleware,
-  requireRole('player'),
-  validateParams(venueSlotParamsSchema),
-  createVenueBookingRequestController,
-);
-venueOwnerRouter.get(
-  '/v1/venue-owner/booking-requests',
-  authMiddleware,
-  requireRole('venue-owner'),
-  validateQuery(venueBookingRequestListQuerySchema),
-  getVenueBookingRequestsController,
-);
-venueOwnerRouter.patch(
-  '/v1/venue-owner/booking-requests/:requestId',
-  authMiddleware,
-  requireRole('venue-owner'),
-  validateParams(venueBookingRequestIdParamsSchema),
-  validate(venueBookingRequestStatusSchema),
-  updateVenueBookingRequestController,
-);
 
 export default venueOwnerRouter;

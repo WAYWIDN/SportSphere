@@ -28,6 +28,7 @@ import VenueBookingRequestsPage from "./modules/venue-owner/pages/VenueBookingRe
 // Game Pages
 import GameListPage from "./modules/game/pages/GameListPage.tsx";
 import GameDetailPage from "./modules/game/pages/GameDetailPage.tsx";
+import MyGamesPage from "./modules/game/pages/MyGamesPage.tsx";
 
 import BookingPage from "./modules/booking/pages/BookingPage.tsx";
 
@@ -47,15 +48,14 @@ export default function App() {
         element={<SubvenueDetailPage />}
       />
       <Route path="/venue-owner" element={<VenueOwnerDashboardPage />} />
-      <Route path="/my-bookings" element={<VenueBookingRequestsPage />} />
 
       <Route path="/games" element={<GameListPage />} />
       <Route path="/games/:gameId" element={<GameDetailPage />} />
-      <Route path="/my-games" element={<GameListPage defaultTab="my-games" />} />
+      <Route path="/my-games" element={<MyGamesPage />} />
 
-      <Route path="/bookings" element={<BookingPage />} />
+      <Route path="/my-bookings" element={<BookingPage />} />
 
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/my-profile" element={<ProfilePage />} />
       <Route path="/profile/:userId" element={<UserProfileViewPage />} />
       <Route path="/admin" element={<AdminApplicationsPage />} />
 

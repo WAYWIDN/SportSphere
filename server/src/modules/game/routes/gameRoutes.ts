@@ -12,6 +12,7 @@ import {
   createGameController,
   createJoinRequestController,
   getGameController,
+  getMyGamesController,
   searchGamesController,
   getJoinRequestsController,
   streamGameController,
@@ -34,6 +35,13 @@ gameRouter.post(
 );
 
 gameRouter.get(
+  '/v1/games/my-games',
+  authMiddleware,
+  requireRole('player'),
+  getMyGamesController,
+);
+
+gameRouter.get(
   '/v1/games/:gameId',
   validateParams(gameIdParamsSchema),
   getGameController,
@@ -48,7 +56,7 @@ gameRouter.get(
 );
 
 gameRouter.post(
-  '/v1/games',
+  '/v1/games/create-game',
   authMiddleware,
   requireRole('player'),
   validate(createGameRequestSchema),

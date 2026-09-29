@@ -96,6 +96,20 @@ export const gameApi = {
     return response.data;
   },
 
+  getMyGames: async (lastGameId?: string) => {
+    const params = new URLSearchParams();
+    if (lastGameId) {
+      params.set("lastGameId", lastGameId);
+    }
+
+    const response = await api.get<{
+      success: boolean;
+      data: GameData[];
+      pagination: GamePagination;
+    }>(`/v1/games/my-games?${params.toString()}`);
+    return response.data;
+  },
+
   subscribeToGame: (
     gameId: string,
     handlers: {
@@ -182,7 +196,7 @@ export const gameApi = {
       success: boolean;
       message: string;
       data: GameData;
-    }>("/v1/games", data);
+    }>("/v1/games/create-game", data);
     return response.data;
   },
 
@@ -206,7 +220,7 @@ export const gameApi = {
   updateJoinRequest: async (
     gameId: string,
     requestId: string,
-    status: "accepted" | "rejected"
+    status: "accepted" | "rejected",
   ) => {
     const response = await api.patch<{
       success: boolean;

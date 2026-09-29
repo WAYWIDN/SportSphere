@@ -276,6 +276,62 @@ export const getGameController = async (req: Request, res: Response) => {
   }
 };
 
+export const getMyGamesController = async (req: Request, res: Response) => {
+  const userId = req.userMetadata?.id;
+
+  const lastGameId = req.query.lastGameId as string | undefined;
+
+  try {
+    const filter: Record<string, unknown> = {
+      $or: [{ creatorId: userId }, { acceptedPlayerIds: userId }],
+    };
+
+    if (lastGameId) {
+      filter._id = { $lt: new Types.ObjectId(lastGameId) };
+    }
+
+    const games = await Game.find(filter)
+      .sort({ _id: -1 })
+      .limit(PAGE_SIZE + 1)
+      .populate({
+        path: 'subvenueId',
+        populate: { path: 'venueId', select: 'name location images' },
+      })
+      .populate('slotId')
+      .lean();
+
+    const page = getPage(games);
+    const userIds = page.data.flatMap((game) => [
+      game.creatorId,
+      ...game.acceptedPlayerIds,
+    ]);
+    const users = await loadPublicUsers(userIds);
+    const data = page.data.map((game) => ({
+      ...game,
+      creatorId: toPublicUser(game.creatorId, users),
+      acceptedPlayerIds: game.acceptedPlayerIds.map((playerId) =>
+        toPublicUser(playerId, users),
+      ),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        limit: PAGE_SIZE,
+        lastGameId: page.lastId,
+        hasNext: page.hasNext,
+      },
+    });
+  } catch (error) {
+    console.error('Error searching games:', error);
+    return res
+      .status(500)
+      .json({ success: false, message: 'Failed to search games' });
+  }
+};
+
+
 export const streamGameController = async (req: Request, res: Response) => {
   const userId = req.userMetadata?.id as string;
   const gameId = req.params.gameId as string;

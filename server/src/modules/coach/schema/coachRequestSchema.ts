@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { SPORTS } from '../../../constants/placeOptions';
-import { MINIMUM_SLOT_DURATION_MS } from '../../../constants/timeConstants';
+import { SPORTS } from '../../../constants/sportOptions';
+import { MINIMUM_SLOT_DURATION_MS } from '../../../constants/slotDurationConstants';
 
 const dateSchema = z
   .string()

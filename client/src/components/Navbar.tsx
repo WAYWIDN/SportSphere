@@ -30,13 +30,13 @@ const ROLE_MENU_ITEMS: Record<string, { label: string; path: string; icon: React
   coach: [{ label: "Coach Dashboard", path: "/coach/dashboard", icon: <LayoutDashboard size={16} /> }],
   "venue-owner": [{ label: "Venue Owner Portal", path: "/venue-owner", icon: <Building size={16} /> }],
   player: [
-    { label: "My Bookings", path: "/bookings", icon: <Calendar size={16} /> },
+    { label: "My Bookings", path: "/my-bookings", icon: <Calendar size={16} /> },
     { label: "My Games", path: "/my-games", icon: <Users size={16} /> },
   ],
 };
 
 const COMMON_MENU_ITEMS = [
-  { label: "My Profile", path: "/profile", icon: <UserIcon size={16} /> },
+  { label: "My Profile", path: "/my-profile", icon: <UserIcon size={16} /> },
   { label: "Reset Password", path: "/reset-password", icon: <KeyRound size={16} /> },
 ];
 
