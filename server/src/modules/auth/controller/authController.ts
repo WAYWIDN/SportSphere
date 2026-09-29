@@ -164,6 +164,8 @@ export const loginUserController = async (req: Request, res: Response) => {
     });
     res.cookie('token', token, {
       httpOnly: true,
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     return res.status(200).json({ success: true });
