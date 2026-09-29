@@ -1,5 +1,3 @@
-https://excalidraw.com/#room=0636957e91df42f2790c,xov4YzbQCEUu5G6evOnZKQ
-
 # SportSphere
 
 SportSphere connects players, coaches, and venue owners. Players find coaches, venues, and games. Coaches publish open slots and accept session requests. Venue owners publish courts and accept booking requests.
