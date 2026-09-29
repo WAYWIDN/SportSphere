@@ -27,10 +27,7 @@ const getPage = <T extends { _id: Types.ObjectId }>(items: T[]) => {
   };
 };
 
-const getGamePlayerIds = (game: {
-  creatorId: any;
-  acceptedPlayerIds: any[];
-}) =>
+const getGamePlayerIds = (game: { creatorId: any; acceptedPlayerIds: any[] }) =>
   game.acceptedPlayerIds.map((id) =>
     typeof id === 'object' && id?._id ? id._id.toString() : id.toString(),
   );
@@ -425,7 +422,9 @@ export const getJoinRequestsController = async (
     const requests = await GameJoinRequest.find({ gameId: game._id })
       .sort({ _id: -1 })
       .lean();
-    const users = await loadPublicUsers(requests.map((request) => request.userId));
+    const users = await loadPublicUsers(
+      requests.map((request) => request.userId),
+    );
     const data = requests.map((request) => ({
       ...request,
       userId: toPublicUser(request.userId, users),
@@ -643,7 +642,9 @@ export const bookGameController = async (req: Request, res: Response) => {
       game: populatedGame,
     });
 
-    return res.status(200).json({ success: true, data: { game: populatedGame, booking } });
+    return res
+      .status(200)
+      .json({ success: true, data: { game: populatedGame, booking } });
   } catch (error) {
     if (bookingId) {
       await Booking.findByIdAndDelete(bookingId);

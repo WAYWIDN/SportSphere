@@ -1,40 +1,18 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../../middleware/authMiddleWare';
-import {
-  validateParams,
-  validateQuery,
-} from '../../../middleware/zodSchemaValidatorMiddleware';
-import {
-  bookingIdParamsSchema,
-  bookingListQuerySchema,
-} from '../schema/bookingRequestSchema';
-import {
-  cancelBookingController,
-  getBookingController,
-  getUserBookingsController,
-} from '../controller/bookingController';
+import { requireRole } from '../../../middleware/roleMiddleware';
+import { validateQuery } from '../../../middleware/zodSchemaValidatorMiddleware';
+import { bookingHistoryQuerySchema } from '../schema/bookingRequestSchema';
+import { getBookingsController } from '../controller/bookingController';
 
 const bookingRouter: Router = Router();
 
 bookingRouter.get(
   '/v1/user/bookings',
   authMiddleware,
-  validateQuery(bookingListQuerySchema),
-  getUserBookingsController,
-);
-
-bookingRouter.get(
-  '/v1/bookings/:bookingId',
-  authMiddleware,
-  validateParams(bookingIdParamsSchema),
-  getBookingController,
-);
-
-bookingRouter.patch(
-  '/v1/bookings/:bookingId/cancel',
-  authMiddleware,
-  validateParams(bookingIdParamsSchema),
-  cancelBookingController,
+  requireRole('player'),
+  validateQuery(bookingHistoryQuerySchema),
+  getBookingsController,
 );
 
 export default bookingRouter;

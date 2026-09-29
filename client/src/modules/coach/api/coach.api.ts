@@ -1,4 +1,4 @@
-import api from "../../../utils/api";
+import api from "../../../lib/api";
 import { cleanObject } from "../../../utils/cleanObject";
 
 const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "http://localhost:5000";
@@ -298,26 +298,6 @@ export const coachApi = {
       success: boolean;
       data: SessionRequestItem;
     }>(`/v1/slots/${slotId}/requests`);
-
-    return response.data;
-  },
-
-  getUserSessionRequests: async (lastRequestId?: string) => {
-    let url = "/v1/user/session-requests";
-
-    if (lastRequestId && lastRequestId.trim() !== "") {
-      url += `?lastRequestId=${encodeURIComponent(lastRequestId.trim())}`;
-    }
-
-    const response = await api.get<{
-      success: boolean;
-      data: SessionRequestItem[];
-      pagination: {
-        limit: number;
-        lastRequestId: string | null;
-        hasNext: boolean;
-      };
-    }>(url);
 
     return response.data;
   },

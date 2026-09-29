@@ -1,4 +1,4 @@
-import api from "../../../utils/api";
+import api from "../../../lib/api";
 import { cleanObject } from "../../../utils/cleanObject";
 
 export interface UserProfileData {

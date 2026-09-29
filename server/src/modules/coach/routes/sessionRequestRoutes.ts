@@ -9,7 +9,6 @@ import {
 import {
   createSessionRequestController,
   getCoachSessionRequestsController,
-  getUserSessionRequestsController,
   updateSessionRequestController,
 } from '../controller/sessionRequestController';
 import {
@@ -27,14 +26,6 @@ sessionRequestRouter.post(
   requireRole('player'),
   validateParams(slotIdParamsSchema),
   createSessionRequestController,
-);
-
-sessionRequestRouter.get(
-  '/v1/user/session-requests',
-  authMiddleware,
-  requireRole('player'),
-  validateQuery(sessionRequestListQuerySchema),
-  getUserSessionRequestsController,
 );
 
 sessionRequestRouter.get(

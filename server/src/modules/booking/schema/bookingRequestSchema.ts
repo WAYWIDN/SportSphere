@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
-export const bookingIdParamsSchema = z.object({
-  bookingId: z.string().regex(/^[a-f\d]{24}$/i),
-});
-
-export const bookingListQuerySchema = z.object({
-  lastBookingId: z
+export const bookingHistoryQuerySchema = z.object({
+  type: z.enum(['coach', 'venue']),
+  lastRequestId: z
     .string()
     .regex(/^[a-f\d]{24}$/i)
     .optional(),

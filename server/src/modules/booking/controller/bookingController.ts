@@ -1,146 +1,86 @@
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import { CoachSlot } from '../../coach/model/coachSlotModel';
 import { SessionRequest } from '../../coach/model/sessionRequestModel';
-import { sendSlotEvent } from '../../coach/utils/slotEventUtils';
-import { VenueSlot } from '../../venue-owner/model/slotModel';
 import { VenueBookingRequest } from '../../venue-owner/model/venueBookingRequestModel';
-import { sendSlotEvent as sendVenueSlotEvent } from '../../venue-owner/utils/slotEventUtils';
-import { Booking } from '../model/bookingModel';
-import { queueBookingNotification } from '../utils/bookingNotificationQueue';
+import {
+  loadPublicUsers,
+  toPublicUser,
+} from '../../profile-management/utils/userNameUtils';
 
-export const getUserBookingsController = async (
+const PAGE_SIZE = 10;
+const OPEN_REQUEST_STATUSES = ['pending', 'approved', 'rejected'];
+
+export const getBookingsController = async (
   req: Request,
   res: Response,
 ) => {
+  const type = req.query.type as 'coach' | 'venue';
+  const lastRequestId = req.query.lastRequestId as string | undefined;
+  const filter: Record<string, unknown> = {
+    userId: req.userMetadata?.id,
+    status: { $in: OPEN_REQUEST_STATUSES },
+  };
+
+  if (lastRequestId) {
+    filter._id = { $lt: new Types.ObjectId(lastRequestId) };
+  }
+
   try {
-    const lastBookingId = req.query.lastBookingId as string | undefined;
+    if (type === 'coach') {
+      const requests = await SessionRequest.find(filter)
+        .sort({ _id: -1 })
+        .limit(PAGE_SIZE + 1)
+        .populate('slotId')
+        .lean();
+      const hasNext = requests.length > PAGE_SIZE;
+      const page = requests.slice(0, PAGE_SIZE);
+      const users = await loadPublicUsers(
+        page.flatMap((request) => [request.userId, request.coachId]),
+      );
+      const data = page.map((request) => ({
+        ...request,
+        userId: toPublicUser(request.userId, users),
+        coachId: toPublicUser(request.coachId, users),
+      }));
 
-    const bookings = await Booking.find(
-      lastBookingId
-        ? {
-            userId: req.userMetadata?.id,
-            _id: { $lt: new Types.ObjectId(lastBookingId) },
-          }
-        : { userId: req.userMetadata?.id },
-    )
+      return res.status(200).json({
+        success: true,
+        data,
+        pagination: {
+          limit: PAGE_SIZE,
+          lastRequestId: hasNext ? data[data.length - 1]._id : null,
+          hasNext,
+        },
+      });
+    }
+
+    const requests = await VenueBookingRequest.find(filter)
       .sort({ _id: -1 })
-      .limit(11)
+      .limit(PAGE_SIZE + 1)
+      .populate({
+        path: 'subvenueId',
+        select: 'name sport venueId',
+        populate: { path: 'venueId', select: 'name' },
+      })
+      .populate('slotId', 'date startEpoch endEpoch price')
       .lean();
-
-    const hasNext = bookings.length > 10;
-    const page = bookings.slice(0, 10);
+    const hasNext = requests.length > PAGE_SIZE;
+    const data = requests.slice(0, PAGE_SIZE);
 
     return res.status(200).json({
       success: true,
-      data: page,
+      data,
       pagination: {
-        limit: 10,
-        lastBookingId: hasNext ? page[page.length - 1]._id : null,
+        limit: PAGE_SIZE,
+        lastRequestId: hasNext ? data[data.length - 1]._id : null,
         hasNext,
       },
     });
   } catch (error) {
-    console.error('Error retrieving user bookings:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Failed to retrieve bookings' });
-  }
-};
-
-export const getBookingController = async (req: Request, res: Response) => {
-  const bookingId = req.params.bookingId as string;
-  try {
-    const booking = await Booking.findOne({
-      _id: bookingId,
-      userId: req.userMetadata?.id,
-    }).lean();
-    if (!booking) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Booking not found' });
-    }
-
-    return res.status(200).json({ success: true, data: booking });
-  } catch (error) {
-    console.error('Error retrieving booking:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Failed to retrieve booking' });
-  }
-};
-
-export const cancelBookingController = async (req: Request, res: Response) => {
-  const bookingId = req.params.bookingId as string;
-  try {
-    const booking = await Booking.findOneAndUpdate(
-      {
-        _id: bookingId,
-        userId: req.userMetadata?.id,
-        status: 'confirmed',
-      },
-      { status: 'cancelled', updatedAt: new Date() },
-      { new: true },
-    );
-    if (!booking) {
-      return res.status(409).json({
-        success: false,
-        message: 'Booking was not found or is already cancelled',
-      });
-    }
-
-    if (booking.providerType === 'coach') {
-      const slot = await CoachSlot.findOneAndUpdate(
-        { _id: booking.resourceId, status: 'booked' },
-        { status: 'available', updatedAt: new Date() },
-        { new: true },
-      );
-      await SessionRequest.findByIdAndUpdate(booking.sourceRequestId, {
-        status: 'cancelled',
-        updatedAt: new Date(),
-      });
-      if (slot) {
-        sendSlotEvent(
-          slot.coachId.toString(),
-          slot.date,
-          slot._id.toString(),
-          'slot_available',
-          { slot },
-        );
-      }
-    } else if (booking.providerType === 'venue') {
-      if (booking.sourceVenueRequestId) {
-        await VenueBookingRequest.findByIdAndUpdate(
-          booking.sourceVenueRequestId,
-          { status: 'cancelled', updatedAt: new Date() },
-        );
-      }
-      const slot = await VenueSlot.findOneAndUpdate(
-        { _id: booking.resourceId, status: 'booked' },
-        { status: 'available', updatedAt: new Date() },
-        { new: true },
-      );
-      if (slot) {
-        sendVenueSlotEvent(
-          slot.subvenueId.toString(),
-          slot.date,
-          slot._id.toString(),
-          'slot_available',
-          { slot },
-        );
-      }
-    }
-
-    await queueBookingNotification({
-      bookingId: booking._id.toString(),
-      status: 'cancelled',
+    console.error('Error retrieving bookings:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve bookings',
     });
-
-    return res.status(200).json({ success: true, data: booking });
-  } catch (error) {
-    console.error('Error cancelling booking:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Failed to cancel booking' });
   }
 };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import api from "../utils/api";
+import api from "../lib/api";
 
 export async function uploadFile(file: File): Promise<string> {
   const resource_type = file.type === "application/pdf" ? "raw" : "image";

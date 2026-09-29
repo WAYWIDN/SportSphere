@@ -38,8 +38,8 @@ The coach module manages coach profiles, coach availability slots, and player re
 ### Session Requests
 
 - `POST /v1/slots/:slotId/requests`
-- `GET /v1/user/session-requests`
-  - Supports cursor-based pagination using `lastRequestId`.
+- `GET /v1/user/bookings?type=coach`
+  - Player history of pending, approved, and rejected coach requests. `type=venue` returns venue requests. Supports cursor pagination with `lastRequestId`.
 - `GET /v1/coach/session-requests`
   - Supports cursor-based pagination using `lastRequestId`.
 - `PATCH /v1/coach/session-requests/:requestId`

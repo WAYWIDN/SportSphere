@@ -16,8 +16,11 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import PageButtons from "../../../components/ui/PageButtons";
-import { sessionApi, type BookingItem } from "../api/session.api";
-import { coachApi, type SessionRequestItem } from "../../coach/api/coach.api";
+import {
+  bookingApi,
+  type VenueBookingRequestItem,
+} from "../api/booking.api";
+import type { SessionRequestItem } from "../../coach/api/coach.api";
 import { formatTimeEpoch } from "../../../utils/formatTime";
 import { useAuth } from "../../../context/AuthContext";
 import { formatUserName } from "../../../utils/formatUserName";
@@ -104,36 +107,52 @@ function CoachSessionCard({ request }: { request: SessionRequestItem }) {
   );
 }
 
-function VenueBookingCard({ booking }: { booking: BookingItem }) {
+function VenueBookingCard({ request }: { request: VenueBookingRequestItem }) {
+  const subvenue = typeof request.subvenueId === "string" ? null : request.subvenueId;
+  const slot = typeof request.slotId === "string" ? null : request.slotId;
+  const venueName =
+    subvenue && typeof subvenue.venueId === "object" ? subvenue.venueId.name : "";
+  const title = [venueName, subvenue?.name].filter(Boolean).join(" · ") || "Venue Booking";
+
   return (
     <div className="bg-card rounded-3xl p-5 border border-border shadow-sm space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
           <Building2 size={14} className="text-muted-foreground" />
-          Venue Booking
+          {title}
         </div>
-        <StatusBadge status={booking.status} />
+        <StatusBadge status={request.status} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1 font-medium text-foreground/80">
-          <Clock size={13} />
-          {formatTimeEpoch(booking.startEpoch)} – {formatTimeEpoch(booking.endEpoch)}
-        </span>
-        <span className="flex items-center gap-1 font-medium text-foreground/80 font-mono">
-          <IndianRupee size={12} className="text-primary" />
-          Booking confirmed
-        </span>
-      </div>
+      {subvenue && (
+        <p className="text-xs text-muted-foreground">{subvenue.sport}</p>
+      )}
+
+      {slot && (
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1 font-medium text-foreground/80">
+            <Calendar size={13} />
+            {slot.date}
+          </span>
+          <span className="flex items-center gap-1 font-medium text-foreground/80">
+            <Clock size={13} />
+            {formatTimeEpoch(slot.startEpoch)} – {formatTimeEpoch(slot.endEpoch)}
+          </span>
+          <span className="flex items-center gap-1 font-medium text-foreground/80 font-mono">
+            <IndianRupee size={12} className="text-primary" />
+            {slot.price}
+          </span>
+        </div>
+      )}
 
       <p className="text-[11px] text-muted-foreground">
-        Booked: {new Date(booking.createdAt).toLocaleDateString()}
+        Requested: {new Date(request.createdAt).toLocaleDateString()}
       </p>
     </div>
   );
 }
 
-export default function SessionsPage() {
+export default function BookingPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>("coach");
 
@@ -147,7 +166,7 @@ export default function SessionsPage() {
   const [coachNextCursor, setCoachNextCursor] = useState<string | null>(null);
   const [coachHasNext, setCoachHasNext] = useState(false);
 
-  const [venueSessions, setVenueSessions] = useState<BookingItem[]>([]);
+  const [venueSessions, setVenueSessions] = useState<VenueBookingRequestItem[]>([]);
   const [venueLoading, setVenueLoading] = useState(true);
   const [venueLoadingPage, setVenueLoadingPage] = useState(false);
   const [venuePage, setVenuePage] = useState(1);
@@ -164,9 +183,9 @@ export default function SessionsPage() {
       setCoachCursorHistory([undefined]);
     }
     try {
-      const res = await coachApi.getUserSessionRequests(cursor);
+      const res = await bookingApi.getBookings("coach", cursor);
       if (res.success) {
-        setCoachSessions(res.data);
+        setCoachSessions(res.data as SessionRequestItem[]);
         setCoachNextCursor(res.pagination.lastRequestId);
         setCoachHasNext(res.pagination.hasNext);
       }
@@ -181,9 +200,9 @@ export default function SessionsPage() {
     setCoachPage(page);
     setCoachLoadingPage(true);
     try {
-      const res = await coachApi.getUserSessionRequests(cursor);
+      const res = await bookingApi.getBookings("coach", cursor);
       if (res.success) {
-        setCoachSessions(res.data);
+        setCoachSessions(res.data as SessionRequestItem[]);
         setCoachNextCursor(res.pagination.lastRequestId);
         setCoachHasNext(res.pagination.hasNext);
       }
@@ -216,11 +235,10 @@ export default function SessionsPage() {
       setVenueCursorHistory([undefined]);
     }
     try {
-      const res = await sessionApi.getVenueBookings(cursor);
+      const res = await bookingApi.getBookings("venue", cursor);
       if (res.success) {
-        const venueOnly = res.data.filter((booking) => booking.providerType === "venue");
-        setVenueSessions(venueOnly);
-        setVenueNextCursor(res.pagination.lastBookingId);
+        setVenueSessions(res.data as VenueBookingRequestItem[]);
+        setVenueNextCursor(res.pagination.lastRequestId);
         setVenueHasNext(res.pagination.hasNext);
       }
     } catch (err: any) {
@@ -234,11 +252,10 @@ export default function SessionsPage() {
     setVenuePage(page);
     setVenueLoadingPage(true);
     try {
-      const res = await sessionApi.getVenueBookings(cursor);
+      const res = await bookingApi.getBookings("venue", cursor);
       if (res.success) {
-        const venueOnly = res.data.filter((booking) => booking.providerType === "venue");
-        setVenueSessions(venueOnly);
-        setVenueNextCursor(res.pagination.lastBookingId);
+        setVenueSessions(res.data as VenueBookingRequestItem[]);
+        setVenueNextCursor(res.pagination.lastRequestId);
         setVenueHasNext(res.pagination.hasNext);
       }
     } catch (err: any) {
@@ -274,7 +291,7 @@ export default function SessionsPage() {
         <div className="max-w-md w-full bg-card p-8 rounded-[2.5rem] border border-border text-center space-y-4 shadow-xl shadow-black/5">
           <h2 className="text-xl font-bold">Please Log In</h2>
           <p className="text-sm text-muted-foreground">
-            Sign in to view your sessions and bookings.
+            Sign in to view your coach and venue bookings.
           </p>
           <Link
             to="/login"
@@ -293,7 +310,9 @@ export default function SessionsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
-          <div>  </div>
+          <div>
+  
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -322,7 +341,7 @@ export default function SessionsPage() {
               }`}
           >
             <Briefcase size={14} />
-            Coach Sessions
+            Coach Bookings
             <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold">
               {coachSessions.length}
             </span>
@@ -348,25 +367,25 @@ export default function SessionsPage() {
         {activeTab === "coach" && (
           <div className="bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border space-y-6">
             <div className="border-b border-border pb-4">
-              <h2 className="text-xl font-bold tracking-tight">Coach Sessions</h2>
+              <h2 className="text-xl font-bold tracking-tight">Coach Bookings</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Your coaching session requests - pending, approved, and past sessions
+                Your coach bookings, including pending, approved, and past ones
               </p>
             </div>
 
             {coachLoading ? (
               <div className="py-12 text-center">
                 <Loader2 className="animate-spin text-primary mx-auto mb-2" size={28} />
-                <p className="text-xs text-muted-foreground">Loading sessions...</p>
+                <p className="text-xs text-muted-foreground">Loading bookings...</p>
               </div>
             ) : coachSessions.length === 0 ? (
               <div className="py-12 text-center space-y-3">
                 <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <Inbox size={22} />
                 </div>
-                <h3 className="text-sm font-bold">No Coach Sessions Yet</h3>
+                <h3 className="text-sm font-bold">No Coach Bookings Yet</h3>
                 <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  You haven't requested any coaching sessions. Discover coaches and book a slot!
+                  You have not booked a coach yet. Discover coaches and book a slot.
                 </p>
                 <Link
                   to="/coaches"
@@ -401,7 +420,7 @@ export default function SessionsPage() {
             <div className="border-b border-border pb-4">
               <h2 className="text-xl font-bold tracking-tight">Venue Bookings</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Your confirmed venue slot bookings
+                Pending, approved, and rejected venue requests
               </p>
             </div>
 
@@ -417,7 +436,7 @@ export default function SessionsPage() {
                 </div>
                 <h3 className="text-sm font-bold">No Venue Bookings Yet</h3>
                 <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  No confirmed venue bookings yet. Explore venues and book a court slot!
+                  You have not requested a venue slot yet. Explore venues and book a court.
                 </p>
                 <Link
                   to="/venues"
@@ -429,8 +448,8 @@ export default function SessionsPage() {
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3">
-                  {venueSessions.map((booking) => (
-                    <VenueBookingCard key={booking._id} booking={booking} />
+                  {venueSessions.map((request) => (
+                    <VenueBookingCard key={request._id} request={request} />
                   ))}
                 </div>
 

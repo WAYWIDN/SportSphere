@@ -89,46 +89,6 @@ export const createSessionRequestController = async (
   }
 };
 
-export const getUserSessionRequestsController = async (
-  req: Request,
-  res: Response,
-) => {
-  const lastRequestId = req.query.lastRequestId as string | undefined;
-
-  try {
-    const requests = await SessionRequest.find(
-      lastRequestId
-        ? {
-            userId: req.userMetadata?.id,
-            _id: { $lt: new Types.ObjectId(lastRequestId) },
-          }
-        : { userId: req.userMetadata?.id },
-    )
-      .sort({ _id: -1 })
-      .limit(11)
-      .populate('slotId')
-      .lean();
-    const page = getPage(requests);
-    const data = await attachRequestNames(page.data);
-
-    return res.status(200).json({
-      success: true,
-      data,
-      pagination: {
-        limit: PAGE_SIZE,
-        lastRequestId: page.lastId,
-        hasNext: page.hasNext,
-      },
-    });
-  } catch (error) {
-    console.error('Error retrieving user session requests:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to retrieve session requests',
-    });
-  }
-};
-
 export const getCoachSessionRequestsController = async (
   req: Request,
   res: Response,

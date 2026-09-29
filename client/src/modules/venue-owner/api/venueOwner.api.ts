@@ -1,4 +1,4 @@
-import api from "../../../utils/api";
+import api from "../../../lib/api";
 import { cleanObject } from "../../../utils/cleanObject";
 
 const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "http://localhost:5000";
