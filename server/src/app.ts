@@ -29,20 +29,27 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(morganLogger);
 
-app.use(authRouter);
-app.use(userProfileRouter);
-app.use(adminRouter);
-app.use(coachRouter);
-app.use(coachSessionRequestRouter);
-app.use(bookingRouter);
-app.use(venueOwnerRouter);
-app.use(venueOwnerSessionRequestRouter);
-app.use(gameRouter);
+const apiRouter = express.Router();
 
-app.post('/v1/upload/signed-url', authMiddleware, getUploadSignature);
+apiRouter.use(authRouter);
+apiRouter.use(userProfileRouter);
+apiRouter.use(adminRouter);
+apiRouter.use(coachRouter);
+apiRouter.use(coachSessionRequestRouter);
+apiRouter.use(bookingRouter);
+apiRouter.use(venueOwnerRouter);
+apiRouter.use(venueOwnerSessionRequestRouter);
+apiRouter.use(gameRouter);
 
-app.get('/check-kar', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', message: 'Server is healthy' });
+apiRouter.post('/v1/upload/signed-url', authMiddleware, getUploadSignature);
+
+app.get('/v1/check-kar', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is healthy',
+  });
 });
+
+app.use('/api', apiRouter);
 
 export default app;
