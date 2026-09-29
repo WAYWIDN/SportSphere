@@ -2,7 +2,7 @@ import { Job, Worker } from 'bullmq';
 import { Types } from 'mongoose';
 import Redis from 'ioredis';
 import envConfig from '../config/envConfig';
-import { transporter } from '../config/nodeMailerConfig';
+import { sendEmail } from '../service/emailService';
 import { Booking } from '../modules/booking/model/bookingModel';
 import { SessionRequest } from '../modules/coach/model/sessionRequestModel';
 import { CoachSlot } from '../modules/coach/model/coachSlotModel';
@@ -62,8 +62,7 @@ const sendBookingNotification = async (job: Job<BookingNotificationData>) => {
       throw new Error(`Request participants not found: ${job.data.requestId}`);
     }
 
-    await transporter.sendMail({
-      from: envConfig.EMAIL_USER,
+    await sendEmail({
       to: [user.email, provider.email],
       subject: 'SportSphere - Booking request rejected',
       html: getBookingNotificationTemplate(
@@ -102,8 +101,7 @@ const sendBookingNotification = async (job: Job<BookingNotificationData>) => {
     subject = 'SportSphere - Booking confirmed';
   }
 
-  await transporter.sendMail({
-    from: envConfig.EMAIL_USER,
+  await sendEmail({
     to: [user.email, provider.email],
     subject,
     html: getBookingNotificationTemplate(

@@ -41,7 +41,7 @@ app.use(gameRouter);
 
 app.post('/v1/upload/signed-url', authMiddleware, getUploadSignature);
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/check-kar', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is healthy' });
 });
 

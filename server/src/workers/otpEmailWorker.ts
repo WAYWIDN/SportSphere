@@ -1,8 +1,7 @@
 import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis';
 import envConfig from '../config/envConfig';
-import { transporter } from '../config/nodeMailerConfig';
-
+import { sendEmail } from '../service/emailService';
 import {
   OTPEmailData,
   otpEmailQueue,
@@ -27,8 +26,7 @@ const sendOTPEmail = async (job: Job<OTPEmailData>) => {
     html = getResetPasswordMailTemplate(otp);
   }
 
-  await transporter.sendMail({
-    from: envConfig.EMAIL_USER,
+  await sendEmail({
     to: email,
     subject,
     html,
@@ -45,7 +43,9 @@ export const startOTPEmailWorker = () => {
   });
 
   worker.on('completed', (job) => {
-    console.log(`[Worker] OTP email sent: ${job.data.type} → ${job.data.email}`);
+    console.log(
+      `[Worker] OTP email sent: ${job.data.type} → ${job.data.email}`,
+    );
   });
 
   worker.on('failed', (job, error) => {

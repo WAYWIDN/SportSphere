@@ -149,7 +149,7 @@ export default function VenueBookingRequestsPage() {
         {/* Back and Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <Link
-            to="/venue-owner"
+            to="/venue-owner/dashboard"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer bg-card shadow-sm w-fit"
           >
             <ArrowLeft size={14} /> Back to Venue Dashboard

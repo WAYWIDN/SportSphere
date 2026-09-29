@@ -14,7 +14,7 @@ export default function AccessDeniedCard() {
           you can apply to become a venue owner in your profile settings.
         </p>
         <Link
-          to="/profile"
+          to="/my-profile"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
         >
           Go to Profile

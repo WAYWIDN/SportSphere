@@ -118,19 +118,20 @@ Create a `.env` file in the `server/` directory with the following variables:
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/sport_sphere
 REDIS_URI=redis://localhost:6379
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
 JWT_SECRET=your_jwt_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+BREVO_API_KEY=your_brevo_api_key
+EMAIL_FROM=your_verified_brevo_sender_email
+EMAIL_FROM_NAME=SportSphere
 CLIENT_URL=http://localhost:5173  # Frontend URL
 ```
 
 #### Frontend (.env)
 Create a `.env` file in the `client/` directory:
 ```env
-VITE_CLIENT_URL=http://localhost:5000  # Backend URL
+VITE_SERVER_URL=http://localhost:5000  # Backend URL
 ```
 
 ### Dependency Installation

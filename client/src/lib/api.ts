@@ -1,8 +1,8 @@
 import axios from "axios";
-const CLIENT_URL = import.meta.env.VITE_CLIENT_URL;
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 const api = axios.create({
-  baseURL: CLIENT_URL,
+  baseURL: SERVER_URL,
   withCredentials: true,
 });
 

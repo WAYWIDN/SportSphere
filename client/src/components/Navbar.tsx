@@ -25,19 +25,48 @@ const ROLE_BADGES = {
   player: { label: "Player", icon: <UserIcon size={12} /> },
 };
 
-const ROLE_MENU_ITEMS: Record<string, { label: string; path: string; icon: React.ReactNode }[]> = {
-  admin: [{ label: "Admin Portal", path: "/admin", icon: <Shield size={16} /> }],
-  coach: [{ label: "Coach Dashboard", path: "/coach/dashboard", icon: <LayoutDashboard size={16} /> }],
-  "venue-owner": [{ label: "Venue Owner Portal", path: "/venue-owner", icon: <Building size={16} /> }],
+const ROLE_MENU_ITEMS: Record<
+  string,
+  { label: string; path: string; icon: React.ReactNode }[]
+> = {
+  admin: [
+    {
+      label: "Admin Portal",
+      path: "/admin/applications",
+      icon: <Shield size={16} />,
+    },
+  ],
+  coach: [
+    {
+      label: "Coach Dashboard",
+      path: "/coach/dashboard",
+      icon: <LayoutDashboard size={16} />,
+    },
+  ],
+  "venue-owner": [
+    {
+      label: "Venue Owner Dashboard",
+      path: "/venue-owner/dashboard",
+      icon: <LayoutDashboard size={16} />,
+    },
+  ],
   player: [
-    { label: "My Bookings", path: "/my-bookings", icon: <Calendar size={16} /> },
+    {
+      label: "My Bookings",
+      path: "/my-bookings",
+      icon: <Calendar size={16} />,
+    },
     { label: "My Games", path: "/my-games", icon: <Users size={16} /> },
   ],
 };
 
 const COMMON_MENU_ITEMS = [
   { label: "My Profile", path: "/my-profile", icon: <UserIcon size={16} /> },
-  { label: "Reset Password", path: "/reset-password", icon: <KeyRound size={16} /> },
+  {
+    label: "Reset Password",
+    path: "/reset-password",
+    icon: <KeyRound size={16} />,
+  },
 ];
 
 export default function Navbar() {
@@ -49,7 +78,8 @@ export default function Navbar() {
   const location = useLocation();
   const { user, setUser } = useAuth();
 
-  const roleBadge = ROLE_BADGES[user?.role as keyof typeof ROLE_BADGES] ?? ROLE_BADGES.player;
+  const roleBadge =
+    ROLE_BADGES[user?.role as keyof typeof ROLE_BADGES] ?? ROLE_BADGES.player;
   const roleItems = ROLE_MENU_ITEMS[user?.role ?? ""] ?? [];
   const menuItems = [...roleItems, ...COMMON_MENU_ITEMS];
 
@@ -74,7 +104,10 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setProfileDropdownOpen(false);
       }
     };
@@ -157,7 +190,9 @@ export default function Navbar() {
               {profileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-3xl border border-border bg-card p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3 py-2 border-b border-border mb-1">
-                    <p className="text-xs font-medium text-muted-foreground">Signed in as</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Signed in as
+                    </p>
                     <p className="text-sm font-semibold text-foreground capitalize truncate">
                       {user.role || "User"}
                     </p>

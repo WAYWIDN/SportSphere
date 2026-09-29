@@ -71,7 +71,7 @@ export default function ApplicationCard({
       <div className="flex flex-wrap items-center gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-border">
         {/* View Applicant Profile Button */}
         <Link
-          to={`/profile/${application.profileId}`}
+          to={`/profiles/${application.profileId}`}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-input text-xs font-medium bg-background hover:bg-muted transition cursor-pointer"
         >
           <Eye size={14} className="text-primary" />

@@ -23,7 +23,7 @@ export const registerUserRequestSchema = z.object({
     .string()
     .min(6, { message: 'Password must be at least 6 characters long' })
     .regex(
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?.&])[A-Za-z\d@$!%*?.&]{6,}$/,
       {
         message:
           'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
@@ -42,10 +42,10 @@ export const resetPasswordRequestSchema = z.object({
     .string()
     .min(6, { message: 'New password must be at least 6 characters long' })
     .regex(
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?.&])[A-Za-z\d@$!%*?.&]{6,}$/,
       {
         message:
-          'New password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
+          'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
       },
     ),
 });

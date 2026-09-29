@@ -1,4 +1,5 @@
 import { User as UserIcon, Loader2, CheckCircle } from "lucide-react";
+import PlaceSelects from "../../../components/ui/PlaceSelects";
 
 interface PersonalDetailsFormProps {
   email: string;
@@ -8,15 +9,18 @@ interface PersonalDetailsFormProps {
   gender: "male" | "female" | "other" | "";
   age: number | "";
   address: string;
+  country: string;
   city: string;
   state: string;
   saving: boolean;
+
   onFirstNameChange: (value: string) => void;
   onLastNameChange: (value: string) => void;
   onPhoneNumberChange: (value: string) => void;
   onGenderChange: (value: "male" | "female" | "other" | "") => void;
   onAgeChange: (value: number | "") => void;
   onAddressChange: (value: string) => void;
+  onCountryChange: (value: string) => void;
   onCityChange: (value: string) => void;
   onStateChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -30,6 +34,7 @@ export default function PersonalDetailsForm({
   gender,
   age,
   address,
+  country,
   city,
   state,
   saving,
@@ -39,12 +44,14 @@ export default function PersonalDetailsForm({
   onGenderChange,
   onAgeChange,
   onAddressChange,
+  onCountryChange,
   onCityChange,
   onStateChange,
   onSubmit,
 }: PersonalDetailsFormProps) {
   const inputClasses =
     "w-full px-4 py-3 rounded-2xl border border-input bg-background/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-ring/20 text-sm transition";
+
   const labelClasses =
     "block text-xs font-semibold text-foreground/80 uppercase tracking-wider mb-2";
 
@@ -52,11 +59,15 @@ export default function PersonalDetailsForm({
     <div className="lg:col-span-2 bg-card rounded-[2.5rem] p-6 sm:p-8 shadow-xl shadow-black/5 border border-border">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Personal Details</h2>
+          <h2 className="text-xl font-bold tracking-tight">
+            Personal Details
+          </h2>
+
           <p className="text-xs text-muted-foreground mt-0.5">
             Manage your personal information and contact details
           </p>
         </div>
+
         <UserIcon className="text-muted-foreground" size={20} />
       </div>
 
@@ -65,6 +76,7 @@ export default function PersonalDetailsForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClasses}>First Name</label>
+
             <input
               type="text"
               value={firstName}
@@ -76,6 +88,7 @@ export default function PersonalDetailsForm({
 
           <div>
             <label className={labelClasses}>Last Name</label>
+
             <input
               type="text"
               value={lastName}
@@ -90,28 +103,26 @@ export default function PersonalDetailsForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClasses}>Email Address</label>
-            <div className="relative">
-              <input
-                type="email"
-                value={email}
-                disabled
-                className="w-full px-4 py-3 rounded-2xl border border-input bg-muted/40 text-muted-foreground text-sm cursor-not-allowed"
-              />
-            </div>
+
+            <input
+              type="email"
+              value={email}
+              disabled
+              className="w-full px-4 py-3 rounded-2xl border border-input bg-muted/40 text-muted-foreground text-sm cursor-not-allowed"
+            />
           </div>
 
           <div>
             <label className={labelClasses}>Phone Number</label>
-            <div className="relative">
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => onPhoneNumberChange(e.target.value)}
-                maxLength={10}
-                placeholder="+1 234 567 890"
-                className={inputClasses}
-              />
-            </div>
+
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => onPhoneNumberChange(e.target.value)}
+              maxLength={10}
+              placeholder="+1 234 567 890"
+              className={inputClasses}
+            />
           </div>
         </div>
 
@@ -119,9 +130,14 @@ export default function PersonalDetailsForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClasses}>Gender</label>
+
             <select
               value={gender}
-              onChange={(e) => onGenderChange(e.target.value as any)}
+              onChange={(e) =>
+                onGenderChange(
+                  e.target.value as "male" | "female" | "other" | "",
+                )
+              }
               className={inputClasses}
             >
               <option value="">Select gender</option>
@@ -133,12 +149,17 @@ export default function PersonalDetailsForm({
 
           <div>
             <label className={labelClasses}>Age</label>
+
             <input
               type="number"
               min={5}
               max={120}
               value={age}
-              onChange={(e) => onAgeChange(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                onAgeChange(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                )
+              }
               placeholder="25"
               className={inputClasses}
             />
@@ -148,6 +169,7 @@ export default function PersonalDetailsForm({
         {/* Street Address */}
         <div>
           <label className={labelClasses}>Street Address</label>
+
           <input
             type="text"
             value={address}
@@ -157,30 +179,17 @@ export default function PersonalDetailsForm({
           />
         </div>
 
-        {/* City / State */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClasses}>City</label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => onCityChange(e.target.value)}
-              placeholder="New York"
-              className={inputClasses}
-            />
-          </div>
-
-          <div>
-            <label className={labelClasses}>State / Region</label>
-            <input
-              type="text"
-              value={state}
-              onChange={(e) => onStateChange(e.target.value)}
-              placeholder="NY"
-              className={inputClasses}
-            />
-          </div>
-        </div>
+        {/* Country / State / City */}
+        <PlaceSelects
+          country={country}
+          stateName={state}
+          city={city}
+          onCountry={onCountryChange}
+          onState={onStateChange}
+          onCity={onCityChange}
+          inputClassName={inputClasses}
+          labelClassName={labelClasses}
+        />
 
         {/* Submit */}
         <div className="pt-4 flex justify-end">

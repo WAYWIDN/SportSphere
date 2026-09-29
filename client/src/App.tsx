@@ -37,28 +37,43 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
 
+      {/* Coach Routes */}
       <Route path="/coaches" element={<CoachListPage />} />
       <Route path="/coaches/:coachId" element={<CoachDetailPage />} />
       <Route path="/coach/dashboard" element={<CoachDashboardPage />} />
 
+      {/* Venue Routes */}
       <Route path="/venues" element={<VenueListPage />} />
       <Route path="/venues/:venueId" element={<VenueDetailPage />} />
       <Route
         path="/venues/:venueId/subvenues/:subvenueId"
         element={<SubvenueDetailPage />}
       />
-      <Route path="/venue-owner" element={<VenueOwnerDashboardPage />} />
+      <Route
+        path="/venue-owner/dashboard"
+        element={<VenueOwnerDashboardPage />}
+      />
+      <Route
+        path="/venue-owner/bookings"
+        element={<VenueBookingRequestsPage />}
+      />
 
+      {/* Game Routes */}
       <Route path="/games" element={<GameListPage />} />
       <Route path="/games/:gameId" element={<GameDetailPage />} />
       <Route path="/my-games" element={<MyGamesPage />} />
 
+      {/* Booking Routes */}
       <Route path="/my-bookings" element={<BookingPage />} />
 
+      {/* Profile Routes */}
       <Route path="/my-profile" element={<ProfilePage />} />
-      <Route path="/profile/:userId" element={<UserProfileViewPage />} />
-      <Route path="/admin" element={<AdminApplicationsPage />} />
+      <Route path="/profiles/:userId" element={<UserProfileViewPage />} />
 
+      {/* Admin Routes */}
+      <Route path="/admin/applications" element={<AdminApplicationsPage />} />
+
+      {/* Auth Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

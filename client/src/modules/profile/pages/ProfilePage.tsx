@@ -25,7 +25,9 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [gender, setGender] = useState<"male" | "female" | "other" | "">("");
+  const [gender, setGender] = useState<
+    "male" | "female" | "other" | ""
+  >("");
   const [age, setAge] = useState<number | "">("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -34,7 +36,9 @@ export default function ProfilePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   // Application state
-  const [applyRole, setApplyRole] = useState<"coach" | "venue-owner">("coach");
+  const [applyRole, setApplyRole] = useState<"coach" | "venue-owner">(
+    "coach",
+  );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -64,13 +68,18 @@ export default function ProfilePage() {
         setProfilePictureUrl(res.data.profilePictureUrl || "");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load profile");
+      toast.error(
+        err.response?.data?.message || "Failed to load profile",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Always send the complete current profile
+  // Country is fixed to India.
+  // It is only used by PlaceSelects and is not sent to the backend.
+  const country = "India";
+
   const getProfileData = (newProfilePictureUrl?: string) => ({
     firstName,
     lastName,
@@ -86,7 +95,9 @@ export default function ProfilePage() {
         : profilePictureUrl,
   });
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -100,14 +111,19 @@ export default function ProfilePage() {
 
     try {
       const url = await uploadFile(file);
+
       setProfilePictureUrl(url);
-      // Send all existing values + new profile picture
+
       await profileApi.updateUserProfile(getProfileData(url));
+
       toast.success("Profile picture updated!");
+
       await fetchProfile();
     } catch (err: any) {
       toast.error(
-        err.response?.data?.message || err.message || "Failed to upload image",
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to upload image",
       );
     } finally {
       setUploadingImage(false);
@@ -121,13 +137,16 @@ export default function ProfilePage() {
 
     try {
       const res = await profileApi.updateUserProfile(getProfileData());
+
       if (res.success) {
         toast.success("Profile updated successfully!");
         setProfile(res.data);
         await checkAuth();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update profile");
+      toast.error(
+        err.response?.data?.message || "Failed to update profile",
+      );
     } finally {
       setSaving(false);
     }
@@ -147,15 +166,20 @@ export default function ProfilePage() {
 
     try {
       setUploadingDoc(true);
+
       const documentUrl = await uploadFile(documentFile);
+
       setUploadingDoc(false);
+
       const res = await profileApi.applyForCoachOrVenueOwner({
         role: applyRole,
         documentUrl,
       });
 
       if (res.success) {
-        toast.success(res.message || "Application submitted successfully!");
+        toast.success(
+          res.message || "Application submitted successfully!",
+        );
         setDocumentFile(null);
       }
     } catch (err: any) {
@@ -173,8 +197,11 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await authApi.logout();
+
       setUser(null);
+
       toast.success("Logged out successfully");
+
       navigate("/login");
     } catch {
       setUser(null);
@@ -185,13 +212,17 @@ export default function ProfilePage() {
   const role = profile?.role || user?.role || "player";
 
   const fullName =
-    [firstName, lastName].filter(Boolean).join(" ") || "Sports Enthusiast";
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    "Sports Enthusiast";
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-primary" size={32} />
+          <Loader2
+            className="animate-spin text-primary"
+            size={32}
+          />
 
           <p className="text-sm text-muted-foreground font-medium">
             Loading your profile...
@@ -237,6 +268,7 @@ export default function ProfilePage() {
             gender={gender}
             age={age}
             address={address}
+            country={country}
             city={city}
             state={state}
             saving={saving}
@@ -246,6 +278,7 @@ export default function ProfilePage() {
             onGenderChange={setGender}
             onAgeChange={setAge}
             onAddressChange={setAddress}
+            onCountryChange={() => {}}
             onCityChange={setCity}
             onStateChange={setState}
             onSubmit={handleSaveProfile}

@@ -1,7 +1,7 @@
 import api from "../../../lib/api";
 import { cleanObject } from "../../../utils/cleanObject";
 
-const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "http://localhost:5000";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
 
 export interface CoachingCenter {
   name: string;
@@ -205,7 +205,7 @@ export const coachApi = {
   ) => {
     const params = new URLSearchParams({ date });
     const eventSource = new EventSource(
-      `${CLIENT_URL}/v1/coaches/${coachId}/slots/events?${params.toString()}`,
+      `${SERVER_URL}/v1/coaches/${coachId}/slots/events?${params.toString()}`,
       { withCredentials: true },
     );
 

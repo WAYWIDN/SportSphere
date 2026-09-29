@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    navigate(-1);
+    navigate("/");
   };
 
   return (

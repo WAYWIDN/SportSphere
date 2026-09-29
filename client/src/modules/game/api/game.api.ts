@@ -2,7 +2,7 @@ import api from "../../../lib/api";
 import { cleanObject } from "../../../utils/cleanObject";
 import type { VenueSlotData } from "../../venue-owner/api/venueOwner.api";
 
-const CLIENT_URL = import.meta.env.VITE_CLIENT_URL || "http://localhost:5000";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
 
 export interface UserSummary {
   _id: string;
@@ -123,7 +123,7 @@ export const gameApi = {
     },
   ) => {
     const eventSource = new EventSource(
-      `${CLIENT_URL}/v1/games/${gameId}/stream`,
+      `${SERVER_URL}/v1/games/${gameId}/stream`,
       { withCredentials: true },
     );
 

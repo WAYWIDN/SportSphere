@@ -348,7 +348,7 @@ export default function HomePage() {
             {coaches.map((coach) => (
               <Link
                 key={coach.id}
-                to={`/coach/${coach.id}`}
+                to={`/coaches/${coach.id}`}
                 className="flex items-center gap-4 rounded-3xl border border-black/10 bg-white/55 p-5"
               >
                 <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#111315] text-sm font-semibold text-white">

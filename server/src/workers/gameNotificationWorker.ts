@@ -1,7 +1,7 @@
 import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis';
 import envConfig from '../config/envConfig';
-import { transporter } from '../config/nodeMailerConfig';
+import { sendEmail } from '../service/emailService';
 import { User } from '../modules/auth/model/userModel';
 import {
   GameNotificationData,
@@ -35,8 +35,7 @@ const sendGameNotification = async (job: Job<GameNotificationData>) => {
     subject = 'SportSphere - Game cancelled';
   }
 
-  await transporter.sendMail({
-    from: envConfig.EMAIL_USER,
+  await sendEmail({
     to: users.map((user) => user.email),
     subject,
     html: getGameNotificationTemplate(job.data.status),

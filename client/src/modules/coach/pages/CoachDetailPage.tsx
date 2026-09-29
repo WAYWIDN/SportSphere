@@ -279,7 +279,7 @@ export default function CoachDetailPage() {
           </p>
 
           <Link
-            to="/coach"
+            to="/coaches"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition cursor-pointer"
           >
             <ArrowLeft size={14} />
@@ -308,7 +308,7 @@ export default function CoachDetailPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/coaches")}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer bg-card shadow-sm"
           >
             <ArrowLeft size={14} />

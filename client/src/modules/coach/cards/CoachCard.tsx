@@ -77,7 +77,7 @@ export default function CoachCard({ coach }: CoachCardProps) {
       {/* Action Link */}
       <div className="pt-3 border-t border-border">
         <Link
-          to={`/coach/${coach.coachId}`}
+          to={`/coaches/${coach.coachId}`}
           className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition cursor-pointer shadow-sm"
         >
           View Slots & Book <ArrowRight size={14} />
